@@ -51,7 +51,7 @@ func TestLoadRecords(t *testing.T) {
 }
 
 func TestWriteRecords(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "coredhcptest")
+	tmpfile, err := ioutil.TempFile("", "coredhcptest")
 	if err != nil {
 		t.Skipf("Could not setup file-based test: %v", err)
 	}

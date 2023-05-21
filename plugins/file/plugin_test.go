@@ -215,7 +215,7 @@ func TestLoadDHCPv6Records(t *testing.T) {
 }
 
 func TestHandler4(t *testing.T) {
-	f, err := os.CreateTemp("", "test_plugin_file")
+	f, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 	//In 2 iteration of test we need to get ip address from leases file
@@ -267,7 +267,7 @@ func TestHandler4(t *testing.T) {
 }
 
 func TestHandler6(t *testing.T) {
-	f, err := os.CreateTemp("", "test_plugin_file")
+	f, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 	//In 2 iteration of test we need to get ip address from leases file
@@ -339,7 +339,7 @@ func TestSetup(t *testing.T) {
 	assert.Error(t, err)
 
 	// Correct setup v4 empty leases file with auto refresh
-	emptyLeases4file, err := os.CreateTemp("", "test_plugin_file")
+	emptyLeases4file, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(emptyLeases4file.Name())
 
@@ -347,7 +347,7 @@ func TestSetup(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Correct setup v4 with not empty leases file with auto refresh
-	leases4file, err := os.CreateTemp("", "test_plugin_file")
+	leases4file, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(leases4file.Name())
 
@@ -356,7 +356,7 @@ func TestSetup(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Correct setup v6 empty leases file with auto refresh
-	emptyLeases6file, err := os.CreateTemp("", "test_plugin_file")
+	emptyLeases6file, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(emptyLeases6file.Name())
 
@@ -364,7 +364,7 @@ func TestSetup(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Correct setup v6 with not empty leases file with auto refresh
-	leases6file, err := os.CreateTemp("", "test_plugin_file")
+	leases6file, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(leases6file.Name())
 
@@ -374,7 +374,7 @@ func TestSetup(t *testing.T) {
 }
 
 func TestAutoRefresh4(t *testing.T) {
-	f, err := os.CreateTemp("", "test_plugin_file")
+	f, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
@@ -408,7 +408,7 @@ func TestAutoRefresh4(t *testing.T) {
 }
 
 func TestAutoRefresh6(t *testing.T) {
-	f, err := os.CreateTemp("", "test_plugin_file")
+	f, err := ioutil.TempFile("", "test_plugin_file")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
