@@ -38,23 +38,26 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/nbp")
+const pluginName = "nbp"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "nbp",
+	Name:   pluginName,
 	Setup6: setup6,
 	Setup4: setup4,
 }
 
 type pluginStateV6 struct {
 	opt59, opt60 dhcpv6.Option
+	log          logrus.FieldLogger
 }
 
 type pluginStateV4 struct {
 	opt66, opt67 *dhcpv4.Option
+	log          logrus.FieldLogger
 }
 
 func parseArgs(args ...string) (*url.URL, error) {
@@ -64,7 +67,7 @@ func parseArgs(args ...string) (*url.URL, error) {
 	return url.Parse(args[0])
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
 	u, err := parseArgs(args...)
 	if err != nil {
 		return nil, err
@@ -81,17 +84,18 @@ func setup6(args ...string) (handler.Handler6, error) {
 	pState := &pluginStateV6{
 		opt59: opt59,
 		opt60: opt60,
+		log:   logger.CreatePluginLogger(serverLogger, pluginName, false),
 	}
-	log.Printf("loaded NBP plugin for DHCPv6.")
+	pState.log.Printf("loaded NBP plugin for DHCPv6.")
 	return pState.Handler6, nil
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
 	u, err := parseArgs(args...)
 	if err != nil {
 		return nil, err
 	}
-	pState := &pluginStateV4{}
+	pState := &pluginStateV4{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 	var otsn, obfn dhcpv4.Option
 	switch u.Scheme {
 	case "http", "https", "ftp":
@@ -103,7 +107,7 @@ func setup4(args ...string) (handler.Handler4, error) {
 	}
 
 	pState.opt67 = &obfn
-	log.Printf("loaded NBP plugin for DHCPv4.")
+	pState.log.Printf("loaded NBP plugin for DHCPv4.")
 	return pState.Handler4, nil
 }
 
@@ -114,7 +118,7 @@ func (p pluginStateV6) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 	}
 	decap, err := req.GetInnerMessage()
 	if err != nil {
-		log.Errorf("Could not decapsulate request: %v", err)
+		p.log.Errorf("Could not decapsulate request: %v", err)
 		// drop the request, this is probably a critical error in the packet.
 		return nil, true
 	}
@@ -129,7 +133,7 @@ func (p pluginStateV6) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 			}
 		}
 	}
-	log.Debugf("Added NBP %s to request", p.opt59)
+	p.log.Debugf("Added NBP %s to request", p.opt59)
 	return resp, true
 }
 
@@ -140,11 +144,11 @@ func (p pluginStateV4) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool)
 	}
 	if req.IsOptionRequested(dhcpv4.OptionTFTPServerName) && p.opt66 != nil {
 		resp.Options.Update(*p.opt66)
-		log.Debugf("Added NBP %s / %s to request", p.opt66, p.opt67)
+		p.log.Debugf("Added NBP %s / %s to request", p.opt66, p.opt67)
 	}
 	if req.IsOptionRequested(dhcpv4.OptionBootfileName) {
 		resp.Options.Update(*p.opt67)
-		log.Debugf("Added NBP %s to request", p.opt67)
+		p.log.Debugf("Added NBP %s to request", p.opt67)
 	}
 	return resp, true
 }

@@ -8,10 +8,13 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/assert"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func makeLLDUID(mac string) (*dhcpv6.Duid, error) {
 	hwaddr, err := net.ParseMAC(mac)
@@ -56,7 +59,7 @@ func testserverID6(t *testing.T, clientID, serverID dhcpv6.Duid, setupArgs []str
 	}
 
 	//Handle
-	handler6, err := setup6(setupArgs...)
+	handler6, err := setup6(testsLogger, setupArgs...)
 	assert.NoError(t, err)
 	_, stop := handler6(req, resp)
 	return stop
@@ -123,7 +126,7 @@ func TestRejectUnexpectedserverIDV6(t *testing.T) {
 	}
 
 	//Handle
-	handler6, err := setup6("LL", "11:22:33:44:55:66")
+	handler6, err := setup6(testsLogger, "LL", "11:22:33:44:55:66")
 	assert.NoError(t, err)
 	result, stop := handler6(req, resp)
 	if result != nil {
@@ -152,7 +155,7 @@ func TestAddserverIDV6(t *testing.T) {
 	}
 
 	//Handle
-	handler6, err := setup6("LL", "11:22:33:44:55:66")
+	handler6, err := setup6(testsLogger, "LL", "11:22:33:44:55:66")
 	assert.NoError(t, err)
 	result, _ := handler6(req, resp)
 	if result == nil {
@@ -192,7 +195,7 @@ func TestRejectInnerMessageserverID(t *testing.T) {
 	}
 
 	//Handle
-	handler6, err := setup6("LL", "11:22:33:44:55:66")
+	handler6, err := setup6(testsLogger, "LL", "11:22:33:44:55:66")
 	assert.NoError(t, err)
 	result, stop := handler6(relayedRequest, resp)
 	if result != nil {

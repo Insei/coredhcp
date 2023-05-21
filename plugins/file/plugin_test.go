@@ -12,11 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestLoadDHCPv4Records(t *testing.T) {
 	t.Run("valid leases", func(t *testing.T) {
@@ -221,7 +224,7 @@ func TestHandler4(t *testing.T) {
 	//In 2 iteration of test we need to get ip address from leases file
 	_, err = f.WriteString("00:11:22:33:44:56 192.0.2.100\n")
 
-	handler4, err := setup4(f.Name())
+	handler4, err := setup4(testsLogger, f.Name())
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -273,7 +276,7 @@ func TestHandler6(t *testing.T) {
 	//In 2 iteration of test we need to get ip address from leases file
 	_, err = f.WriteString("11:22:33:44:55:77 2001:db8::10:1\n")
 
-	handler6, err := setup6(f.Name())
+	handler6, err := setup6(testsLogger, f.Name())
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -318,24 +321,24 @@ func TestHandler6(t *testing.T) {
 
 func TestSetup(t *testing.T) {
 	// too few arguments
-	_, err := setup4()
+	_, err := setup4(testsLogger)
 	assert.Error(t, err)
 
-	_, err = setup6()
+	_, err = setup6(testsLogger)
 	assert.Error(t, err)
 
 	// empty file name
-	_, err = setup4("")
+	_, err = setup4(testsLogger, "")
 	assert.Error(t, err)
 
-	_, err = setup6("")
+	_, err = setup6(testsLogger, "")
 	assert.Error(t, err)
 
 	// trigger error in LoadDHCPv*Records
-	_, err = setup4("/foo/bar")
+	_, err = setup4(testsLogger, "/foo/bar")
 	assert.Error(t, err)
 
-	_, err = setup6("/foo/bar")
+	_, err = setup6(testsLogger, "/foo/bar")
 	assert.Error(t, err)
 
 	// Correct setup v4 empty leases file with auto refresh
@@ -343,7 +346,7 @@ func TestSetup(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(emptyLeases4file.Name())
 
-	_, err = setup4(emptyLeases4file.Name(), autoRefreshArg)
+	_, err = setup4(testsLogger, emptyLeases4file.Name(), autoRefreshArg)
 	assert.NoError(t, err)
 
 	// Correct setup v4 with not empty leases file with auto refresh
@@ -352,7 +355,7 @@ func TestSetup(t *testing.T) {
 	defer os.Remove(leases4file.Name())
 
 	_, err = leases4file.WriteString("00:11:22:33:44:56 192.0.2.100\n")
-	_, err = setup4(leases4file.Name(), autoRefreshArg)
+	_, err = setup4(testsLogger, leases4file.Name(), autoRefreshArg)
 	assert.NoError(t, err)
 
 	// Correct setup v6 empty leases file with auto refresh
@@ -360,7 +363,7 @@ func TestSetup(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(emptyLeases6file.Name())
 
-	_, err = setup6(emptyLeases6file.Name(), autoRefreshArg)
+	_, err = setup6(testsLogger, emptyLeases6file.Name(), autoRefreshArg)
 	assert.NoError(t, err)
 
 	// Correct setup v6 with not empty leases file with auto refresh
@@ -369,7 +372,7 @@ func TestSetup(t *testing.T) {
 	defer os.Remove(leases6file.Name())
 
 	_, err = leases6file.WriteString("11:22:33:44:55:77 2001:db8::10:1\n")
-	_, err = setup6(leases6file.Name(), autoRefreshArg)
+	_, err = setup6(testsLogger, leases6file.Name(), autoRefreshArg)
 	assert.NoError(t, err)
 }
 
@@ -378,7 +381,7 @@ func TestAutoRefresh4(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
-	handler4, err := setup4(f.Name(), autoRefreshArg)
+	handler4, err := setup4(testsLogger, f.Name(), autoRefreshArg)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -412,7 +415,7 @@ func TestAutoRefresh6(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
-	handler6, err := setup6(f.Name(), autoRefreshArg)
+	handler6, err := setup6(testsLogger, f.Name(), autoRefreshArg)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}

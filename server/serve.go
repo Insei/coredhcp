@@ -9,12 +9,13 @@ import (
 	"io"
 	"net"
 
+	"github.com/insei/coredhcp/logger"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
 
 	"github.com/insei/coredhcp/config"
 	"github.com/insei/coredhcp/handler"
-	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4/server4"
 	"github.com/insomniacslk/dhcp/dhcpv6/server6"
@@ -42,6 +43,7 @@ type listener interface {
 type Servers struct {
 	listeners []listener
 	errors    chan error
+	log       logrus.FieldLogger
 }
 
 func listen4(a *net.UDPAddr) (*listener4, error) {
@@ -112,18 +114,20 @@ func listen6(a *net.UDPAddr) (*listener6, error) {
 
 // Start will start the server asynchronously. See `Wait` to wait until
 // the execution ends.
-func Start(config *config.Config) (*Servers, error) {
-	handlers4, handlers6, err := plugins.LoadPlugins(config)
+func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
+	serverLogger := logger.WithField("prefix", config.Name)
+	handlers4, handlers6, err := plugins.LoadPlugins(serverLogger, config)
 	if err != nil {
 		return nil, err
 	}
 	srv := Servers{
 		errors: make(chan error),
+		log:    serverLogger,
 	}
 
 	// listen
 	if config.Server6 != nil {
-		log.Println("Starting DHCPv6 server")
+		serverLogger.Println("Starting DHCPv6 server")
 		for _, addr := range config.Server6.Addresses {
 			var l6 *listener6
 			l6, err = listen6(&addr)
@@ -139,7 +143,7 @@ func Start(config *config.Config) (*Servers, error) {
 	}
 
 	if config.Server4 != nil {
-		log.Println("Starting DHCPv4 server")
+		serverLogger.Println("Starting DHCPv4 server")
 		for _, addr := range config.Server4.Addresses {
 			var l4 *listener4
 			l4, err = listen4(&addr)
@@ -163,7 +167,7 @@ cleanup:
 
 // Wait waits until the end of the execution of the server.
 func (s *Servers) Wait() error {
-	log.Debug("Waiting")
+	s.log.Debug("Waiting")
 	err := <-s.errors
 	s.Close()
 	return err

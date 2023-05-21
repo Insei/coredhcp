@@ -13,13 +13,14 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/netmask")
+const pluginName = "netmask"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "netmask",
+	Name:   pluginName,
 	Setup4: setup4,
 }
 
@@ -27,8 +28,9 @@ type pluginState struct {
 	netmask net.IPMask
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Printf("loaded plugin for DHCPv4.")
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	plog := logger.CreatePluginLogger(serverLogger, pluginName, false)
+	plog.Printf("loaded plugin for DHCPv4")
 	if len(args) != 1 {
 		return nil, errors.New("need at least one netmask IP address")
 	}
@@ -46,7 +48,7 @@ func setup4(args ...string) (handler.Handler4, error) {
 	if !checkValidNetmask(pState.netmask) {
 		return nil, errors.New("netmask is not valid, got: " + args[0])
 	}
-	log.Printf("loaded client netmask")
+	plog.Printf("loaded client netmask")
 	return pState.Handler4, nil
 }
 

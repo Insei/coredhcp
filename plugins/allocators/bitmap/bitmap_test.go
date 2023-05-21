@@ -10,15 +10,18 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/willf/bitset"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func getAllocator(bits int) *Allocator {
 	_, prefix, err := net.ParseCIDR("2001:db8::/56")
 	if err != nil {
 		panic(err)
 	}
-	alloc, err := NewBitmapAllocator(*prefix, 56+bits)
+	alloc, err := NewBitmapAllocator(testsLogger, *prefix, 56+bits)
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +49,7 @@ func TestAlloc(t *testing.T) {
 
 func TestExhaust(t *testing.T) {
 	_, prefix, _ := net.ParseCIDR("2001:db8::/62")
-	alloc, _ := NewBitmapAllocator(*prefix, 64)
+	alloc, _ := NewBitmapAllocator(testsLogger, *prefix, 64)
 
 	allocd := []net.IPNet{}
 	for i := 0; i < 4; i++ {

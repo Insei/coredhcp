@@ -12,26 +12,28 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/router")
+const pluginName = "router"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "router",
+	Name:   pluginName,
 	Setup4: setup4,
 }
 
 type pluginState struct {
 	routers []net.IP
+	log     logrus.FieldLogger
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Printf("Loaded plugin for DHCPv4.")
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	pState := &pluginState{routers: []net.IP{}, log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
+	pState.log.Printf("Loaded plugin for DHCPv4.")
 	if len(args) < 1 {
 		return nil, errors.New("need at least one router IP address")
 	}
-	pState := &pluginState{routers: []net.IP{}}
 	for _, arg := range args {
 		router := net.ParseIP(arg)
 		if router.To4() == nil {
@@ -39,7 +41,7 @@ func setup4(args ...string) (handler.Handler4, error) {
 		}
 		pState.routers = append(pState.routers, router)
 	}
-	log.Infof("loaded %d router IP addresses.", len(pState.routers))
+	pState.log.Infof("loaded %d router IP addresses.", len(pState.routers))
 	return pState.Handler4, nil
 }
 

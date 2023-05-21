@@ -13,23 +13,25 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/dns")
+const pluginName = "dns"
 
 // Plugin wraps the DNS plugin information.
 var Plugin = plugins.Plugin{
-	Name:   "dns",
+	Name:   pluginName,
 	Setup6: setup6,
 	Setup4: setup4,
 }
 
 type pluginState struct {
 	dnsServers []net.IP
+	log        logrus.FieldLogger
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
-	pState := &pluginState{}
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+	pState := &pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, true)}
 	if len(args) < 1 {
 		return nil, errors.New("need at least one DNS server")
 	}
@@ -40,16 +42,16 @@ func setup6(args ...string) (handler.Handler6, error) {
 		}
 		pState.dnsServers = append(pState.dnsServers, server)
 	}
-	log.Infof("loaded %d DNS servers.", len(pState.dnsServers))
+	pState.log.Infof("loaded %d DNS servers.", len(pState.dnsServers))
 	return pState.Handler6, nil
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Printf("loaded plugin for DHCPv4.")
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	pState := &pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
+	pState.log.Printf("loaded plugin for DHCPv4.")
 	if len(args) < 1 {
 		return nil, errors.New("need at least one DNS server")
 	}
-	pState := &pluginState{}
 	for _, arg := range args {
 		DNSServer := net.ParseIP(arg)
 		if DNSServer.To4() == nil {
@@ -57,7 +59,7 @@ func setup4(args ...string) (handler.Handler4, error) {
 		}
 		pState.dnsServers = append(pState.dnsServers, DNSServer)
 	}
-	log.Infof("loaded %d DNS servers.", len(pState.dnsServers))
+	pState.log.Infof("loaded %d DNS servers.", len(pState.dnsServers))
 	return pState.Handler4, nil
 }
 
@@ -65,7 +67,7 @@ func setup4(args ...string) (handler.Handler4, error) {
 func (p *pluginState) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 	decap, err := req.GetInnerMessage()
 	if err != nil {
-		log.Errorf("Could not decapsulate relayed message, aborting: %v", err)
+		p.log.Errorf("Could not decapsulate relayed message, aborting: %v", err)
 		return nil, true
 	}
 

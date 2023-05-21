@@ -13,13 +13,14 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/mtu")
+const pluginName = "mtu"
 
 // Plugin wraps the MTU plugin information.
 var Plugin = plugins.Plugin{
-	Name:   "mtu",
+	Name:   pluginName,
 	Setup4: setup4,
 	// No Setup6 since DHCPv6 does not have MTU-related options
 }
@@ -28,16 +29,17 @@ type pluginState struct {
 	mtu int
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
 	if len(args) != 1 {
 		return nil, errors.New("need one mtu value")
 	}
 	var err error
+	plog := logger.CreatePluginLogger(serverLogger, pluginName, false)
 	pState := &pluginState{}
 	if pState.mtu, err = strconv.Atoi(args[0]); err != nil {
 		return nil, fmt.Errorf("invalid mtu: %v", args[0])
 	}
-	log.Infof("loaded mtu %d.", pState.mtu)
+	plog.Infof("loaded mtu %d.", pState.mtu)
 	return pState.Handler4, nil
 }
 

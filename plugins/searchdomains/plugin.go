@@ -13,9 +13,10 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/searchdomains")
+const pluginName = "searchdomains"
 
 // Plugin wraps the default DNS search domain options.
 // Note that importing the plugin is not enough to use it: you have to
@@ -29,7 +30,7 @@ var log = logger.GetLogger("plugins/searchdomains")
 //	- server_id: LL aa:bb:cc:dd:ee:ff
 //	- file: "leases.txt"
 var Plugin = plugins.Plugin{
-	Name:   "searchdomains",
+	Name:   pluginName,
 	Setup6: setup6,
 	Setup4: setup4,
 }
@@ -40,6 +41,7 @@ var Plugin = plugins.Plugin{
 // this plugin once for the v4 and once for the v6 server.
 type pluginState struct {
 	searchList []string
+	log        logrus.FieldLogger
 }
 
 // copySlice creates a new copy of a string slice in memory.
@@ -51,18 +53,22 @@ func copySlice(original []string) []string {
 	return copied
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
-	log.Printf("Registered domain search list (DHCPv6) %s", args)
-	return (&pluginState{
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+	pState := &pluginState{
 		searchList: args,
-	}).Handler6, nil
+		log:        logger.CreatePluginLogger(serverLogger, pluginName, true),
+	}
+	pState.log.Printf("Registered domain search list (DHCPv6) %s", args)
+	return pState.Handler6, nil
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Printf("Registered domain search list (DHCPv4) %s", args)
-	return (&pluginState{
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	pState := &pluginState{
 		searchList: args,
-	}).Handler4, nil
+		log:        logger.CreatePluginLogger(serverLogger, pluginName, true),
+	}
+	pState.log.Printf("Registered domain search list (DHCPv4) %s", args)
+	return pState.Handler4, nil
 }
 
 func (p *pluginState) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {

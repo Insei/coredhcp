@@ -39,7 +39,7 @@ var (
 	flagLogFile     = flag.StringP("logfile", "l", "", "Name of the log file to append to. Default: stdout/stderr only")
 	flagLogNoStdout = flag.BoolP("nostdout", "N", false, "Disable logging to stdout/stderr")
 	flagLogLevel    = flag.StringP("loglevel", "L", "info", fmt.Sprintf("Log level. One of %v", getLogLevels()))
-	flagConfig      = flag.StringP("conf", "c", "", "Use this configuration file instead of the default location")
+	flagConfig      = flag.StringP("conf", "c", "default-server.config.yml", "Use this configuration file instead of the default location")
 	flagPlugins     = flag.BoolP("plugins", "P", false, "list plugins")
 )
 
@@ -101,19 +101,22 @@ func main() {
 		log.Infof("Disabling logging to stdout/stderr")
 		logger.WithNoStdOutErr(log)
 	}
-	config, err := config.Load(*flagConfig)
+
+	parser := config.NewParser(log)
+	config, err := parser.Parse(*flagConfig)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+	serverLogger := logger.GetLogger(config.Name)
 	// register plugins
 	for _, plugin := range desiredPlugins {
-		if err := plugins.RegisterPlugin(plugin); err != nil {
+		if err := plugins.RegisterPlugin(log, plugin); err != nil {
 			log.Fatalf("Failed to register plugin '%s': %v", plugin.Name, err)
 		}
 	}
 
 	// start server
-	srv, err := server.Start(config)
+	srv, err := server.Start(serverLogger, config)
 	if err != nil {
 		log.Fatal(err)
 	}

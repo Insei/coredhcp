@@ -19,13 +19,14 @@ import (
 	"github.com/insei/coredhcp/plugins/allocators"
 	"github.com/insei/coredhcp/plugins/allocators/bitmap"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/range")
+const pluginName = "range"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "range",
+	Name:   pluginName,
 	Setup4: setup4,
 }
 
@@ -44,6 +45,7 @@ type pluginState struct {
 	LeaseTime time.Duration
 	leasefile *os.File
 	allocator allocators.Allocator
+	log       logrus.FieldLogger
 }
 
 // Handler4 handles DHCPv4 packets for the range plugin
@@ -53,10 +55,10 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 	record, ok := p.Recordsv4[req.ClientHWAddr.String()]
 	if !ok {
 		// Allocating new address since there isn't one allocated
-		log.Printf("MAC address %s is new, leasing new IPv4 address", req.ClientHWAddr.String())
+		p.log.Printf("MAC address %s is new, leasing new IPv4 address", req.ClientHWAddr.String())
 		ip, err := p.allocator.Allocate(net.IPNet{})
 		if err != nil {
-			log.Errorf("Could not allocate IP for MAC %s: %v", req.ClientHWAddr.String(), err)
+			p.log.Errorf("Could not allocate IP for MAC %s: %v", req.ClientHWAddr.String(), err)
 			return nil, true
 		}
 		rec := Record{
@@ -65,7 +67,7 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 		}
 		err = saveIPAddress(p.leasefile, req.ClientHWAddr, &rec)
 		if err != nil {
-			log.Errorf("SaveIPAddress for MAC %s failed: %v", req.ClientHWAddr.String(), err)
+			p.log.Errorf("SaveIPAddress for MAC %s failed: %v", req.ClientHWAddr.String(), err)
 		}
 		p.Recordsv4[req.ClientHWAddr.String()] = &rec
 		record = &rec
@@ -75,21 +77,19 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 			record.expires = time.Now().Add(p.LeaseTime).Round(time.Second)
 			err := saveIPAddress(p.leasefile, req.ClientHWAddr, record)
 			if err != nil {
-				log.Errorf("Could not persist lease for MAC %s: %v", req.ClientHWAddr.String(), err)
+				p.log.Errorf("Could not persist lease for MAC %s: %v", req.ClientHWAddr.String(), err)
 			}
 		}
 	}
 	resp.YourIPAddr = record.IP
 	resp.Options.Update(dhcpv4.OptIPAddressLeaseTime(p.LeaseTime.Round(time.Second)))
-	log.Printf("found IP address %s for MAC %s", record.IP, req.ClientHWAddr.String())
+	p.log.Printf("found IP address %s for MAC %s", record.IP, req.ClientHWAddr.String())
 	return resp, false
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	var (
-		err error
-		p   pluginState
-	)
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	var err error
+	pState := pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 
 	if len(args) < 4 {
 		return nil, fmt.Errorf("invalid number of arguments, want: 4 (file name, start IP, end IP, lease time), got: %d", len(args))
@@ -110,25 +110,25 @@ func setup4(args ...string) (handler.Handler4, error) {
 		return nil, errors.New("start of IP range has to be lower than the end of an IP range")
 	}
 
-	p.allocator, err = bitmap.NewIPv4Allocator(ipRangeStart, ipRangeEnd)
+	pState.allocator, err = bitmap.NewIPv4Allocator(ipRangeStart, ipRangeEnd)
 	if err != nil {
 		return nil, fmt.Errorf("could not create an allocator: %w", err)
 	}
 
-	p.LeaseTime, err = time.ParseDuration(args[3])
+	pState.LeaseTime, err = time.ParseDuration(args[3])
 	if err != nil {
 		return nil, fmt.Errorf("invalid lease duration: %v", args[3])
 	}
 
-	p.Recordsv4, err = loadRecordsFromFile(filename)
+	pState.Recordsv4, err = loadRecordsFromFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("could not load records from file: %v", err)
 	}
 
-	log.Printf("Loaded %d DHCPv4 leases from %s", len(p.Recordsv4), filename)
+	pState.log.Printf("Loaded %d DHCPv4 leases from %s", len(pState.Recordsv4), filename)
 
-	for _, v := range p.Recordsv4 {
-		ip, err := p.allocator.Allocate(net.IPNet{IP: v.IP})
+	for _, v := range pState.Recordsv4 {
+		ip, err := pState.allocator.Allocate(net.IPNet{IP: v.IP})
 		if err != nil {
 			return nil, fmt.Errorf("failed to re-allocate leased ip %v: %v", v.IP.String(), err)
 		}
@@ -137,9 +137,9 @@ func setup4(args ...string) (handler.Handler4, error) {
 		}
 	}
 
-	if err := registerBackingFile(&p.leasefile, filename); err != nil {
+	if err := registerBackingFile(&pState.leasefile, filename); err != nil {
 		return nil, fmt.Errorf("could not setup lease storage: %w", err)
 	}
 
-	return p.Handler4, nil
+	return pState.Handler4, nil
 }

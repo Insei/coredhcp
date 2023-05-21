@@ -8,11 +8,14 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestAddDomains6(t *testing.T) {
 	assert := assert.New(t)
@@ -21,7 +24,7 @@ func TestAddDomains6(t *testing.T) {
 	searchDomains := []string{"domain.a", "domain.b"}
 
 	// Init plugin
-	handler6, err := Plugin.Setup6(searchDomains...)
+	handler6, err := Plugin.Setup6(testsLogger, searchDomains...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +67,7 @@ func TestAddDomains4(t *testing.T) {
 	searchDomains := []string{"domain.b", "domain.c"}
 
 	// Init plugin
-	handler4, err := Plugin.Setup4(searchDomains...)
+	handler4, err := Plugin.Setup4(testsLogger, searchDomains...)
 	if err != nil {
 		t.Fatal(err)
 	}
