@@ -1,11 +1,11 @@
-name: Lint
+name: Check Licenses
 
 on:
   push:
     tags:
       - v*
     branches:
-      - master
+      - main
   pull_request:
 
 jobs:
@@ -13,9 +13,9 @@ jobs:
     name: checklicenses
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: check license headers
         run: |
           set -exu
-          go get -u github.com/u-root/u-root/tools/checklicenses
+          go install github.com/u-root/u-root/tools/checklicenses@v0.11.0
           $(go env GOPATH)/bin/checklicenses -c .ci/checklicenses_config.json
