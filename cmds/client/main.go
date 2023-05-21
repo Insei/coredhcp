@@ -12,7 +12,7 @@ import (
 	"flag"
 	"net"
 
-	"github.com/coredhcp/coredhcp/logger"
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 	"github.com/insomniacslk/dhcp/iana"

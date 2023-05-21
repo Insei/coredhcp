@@ -1,5 +1,5 @@
 {
-    "gopkg": "github.com/coredhcp/coredhcp",
+    "gopkg": "github.com/insei/coredhcp",
     "licenses": [
         [
             "^// Copyright 2018-present the CoreDHCP Authors\\. All rights reserved",

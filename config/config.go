@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coredhcp/coredhcp/logger"
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/spf13/cast"

@@ -10,9 +10,9 @@ package example
 // Feedback is welcome!
 
 import (
-	"github.com/coredhcp/coredhcp/handler"
-	"github.com/coredhcp/coredhcp/logger"
-	"github.com/coredhcp/coredhcp/plugins"
+	"github.com/insei/coredhcp/handler"
+	"github.com/insei/coredhcp/logger"
+	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
@@ -30,8 +30,8 @@ var log = logger.GetLogger("plugins/example")
 // functions:
 //
 // import (
-//     "github.com/coredhcp/coredhcp/plugins"
-//     "github.com/coredhcp/coredhcp/plugins/example"
+//     "github.com/insei/coredhcp/plugins"
+//     "github.com/insei/coredhcp/plugins/example"
 // )
 //
 // var Plugin = plugins.Plugin{

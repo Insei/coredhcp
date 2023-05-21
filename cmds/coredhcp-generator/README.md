@@ -14,13 +14,13 @@ plugins you wish. Just use it as follows:
 ```
 $ ./coredhcp-generator -from core-plugins.txt
 2019/11/21 23:32:04 Generating output file '/tmp/coredhcp547019106/coredhcp.go' with 7 plugin(s):
-2019/11/21 23:32:04   1) github.com/coredhcp/coredhcp/plugins/file
-2019/11/21 23:32:04   2) github.com/coredhcp/coredhcp/plugins/lease_time
-2019/11/21 23:32:04   3) github.com/coredhcp/coredhcp/plugins/netmask
-2019/11/21 23:32:04   4) github.com/coredhcp/coredhcp/plugins/range
-2019/11/21 23:32:04   5) github.com/coredhcp/coredhcp/plugins/router
-2019/11/21 23:32:04   6) github.com/coredhcp/coredhcp/plugins/server_id
-2019/11/21 23:32:04   7) github.com/coredhcp/coredhcp/plugins/dns
+2019/11/21 23:32:04   1) github.com/insei/coredhcp/plugins/file
+2019/11/21 23:32:04   2) github.com/insei/coredhcp/plugins/lease_time
+2019/11/21 23:32:04   3) github.com/insei/coredhcp/plugins/netmask
+2019/11/21 23:32:04   4) github.com/insei/coredhcp/plugins/range
+2019/11/21 23:32:04   5) github.com/insei/coredhcp/plugins/router
+2019/11/21 23:32:04   6) github.com/insei/coredhcp/plugins/server_id
+2019/11/21 23:32:04   7) github.com/insei/coredhcp/plugins/dns
 2019/11/21 23:32:04 Generated file '/tmp/coredhcp547019106/coredhcp.go'. You can build it by running 'go build' in the output directory.
 ```
 
@@ -28,7 +28,7 @@ You can also specify the plugin list on the command line, or mix it with
 `-from`:
 ```
 $ ./coredhcp-generator -from core-plugins.txt \
-    github.com/coredhcp/plugins/redis
+    github.com/insei/plugins/redis
 ```
 
 Notice that it created a file called `coredhcp.go` in a temporary directory. You

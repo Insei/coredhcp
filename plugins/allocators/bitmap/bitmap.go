@@ -19,8 +19,8 @@ import (
 
 	"github.com/willf/bitset"
 
-	"github.com/coredhcp/coredhcp/logger"
-	"github.com/coredhcp/coredhcp/plugins/allocators"
+	"github.com/insei/coredhcp/logger"
+	"github.com/insei/coredhcp/plugins/allocators"
 )
 
 var log = logger.GetLogger("plugins/allocators/bitmap")

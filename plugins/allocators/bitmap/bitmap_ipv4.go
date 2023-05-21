@@ -14,7 +14,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/coredhcp/coredhcp/plugins/allocators"
+	"github.com/insei/coredhcp/plugins/allocators"
 	"github.com/willf/bitset"
 )
 

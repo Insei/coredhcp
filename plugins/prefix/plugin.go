@@ -27,11 +27,11 @@ import (
 	dhcpIana "github.com/insomniacslk/dhcp/iana"
 	"github.com/willf/bitset"
 
-	"github.com/coredhcp/coredhcp/handler"
-	"github.com/coredhcp/coredhcp/logger"
-	"github.com/coredhcp/coredhcp/plugins"
-	"github.com/coredhcp/coredhcp/plugins/allocators"
-	"github.com/coredhcp/coredhcp/plugins/allocators/bitmap"
+	"github.com/insei/coredhcp/handler"
+	"github.com/insei/coredhcp/logger"
+	"github.com/insei/coredhcp/plugins"
+	"github.com/insei/coredhcp/plugins/allocators"
+	"github.com/insei/coredhcp/plugins/allocators/bitmap"
 )
 
 var log = logger.GetLogger("plugins/prefix")

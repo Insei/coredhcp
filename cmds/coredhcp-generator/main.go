@@ -20,7 +20,7 @@ import (
 
 const (
 	defaultTemplateFile = "coredhcp.go.template"
-	importBase          = "github.com/coredhcp/coredhcp/"
+	importBase          = "github.com/insei/coredhcp/"
 )
 
 var (
@@ -75,7 +75,7 @@ func main() {
 			// Assume this is one of the builtin plugins. If needed, use the -from option
 			// which always requires (and uses) exact paths
 
-			// XXX: we could also look into github.com/coredhcp/plugins
+			// XXX: we could also look into github.com/insei/plugins
 			pl = importBase + pl
 		}
 		plugins[pl] = true

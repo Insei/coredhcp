@@ -19,13 +19,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/vishvananda/netns"
 
-	"github.com/coredhcp/coredhcp/config"
-	"github.com/coredhcp/coredhcp/plugins"
-	"github.com/coredhcp/coredhcp/server"
+	"github.com/insei/coredhcp/config"
+	"github.com/insei/coredhcp/plugins"
+	"github.com/insei/coredhcp/server"
 
 	// Plugins
-	"github.com/coredhcp/coredhcp/plugins/file"
-	"github.com/coredhcp/coredhcp/plugins/serverid"
+	"github.com/insei/coredhcp/plugins/file"
+	"github.com/insei/coredhcp/plugins/serverid"
 )
 
 var serverConfig = config.Config{

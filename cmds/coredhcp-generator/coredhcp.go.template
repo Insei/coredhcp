@@ -13,11 +13,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/coredhcp/coredhcp/config"
-	"github.com/coredhcp/coredhcp/logger"
-	"github.com/coredhcp/coredhcp/server"
+	"github.com/insei/coredhcp/config"
+	"github.com/insei/coredhcp/logger"
+	"github.com/insei/coredhcp/server"
 
-	"github.com/coredhcp/coredhcp/plugins"
+	"github.com/insei/coredhcp/plugins"
 {{- range $plugin := .}}
 	{{- /* We import all plugins as pl_<pluginname> to avoid conflicts with reserved keywords */}}
 	{{importname $plugin}} "{{$plugin}}"

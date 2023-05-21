@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/coredhcp/coredhcp.svg?branch=master)](https://travis-ci.org/coredhcp/coredhcp)
 [![codecov](https://codecov.io/gh/coredhcp/coredhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/coredhcp/coredhcp)
-[![Go Report Card](https://goreportcard.com/badge/github.com/coredhcp/coredhcp)](https://goreportcard.com/report/github.com/coredhcp/coredhcp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/insei/coredhcp)](https://goreportcard.com/report/github.com/insei/coredhcp)
 
 Fast, multithreaded, modular and extensible DHCP server written in Go
 
@@ -85,7 +85,7 @@ new features to CoreDHCP.
 
 Core plugins can be found under the [plugins](/plugins/) directory. Additional
 plugins can also be found in the
-[coredhcp/plugins](https://github.com/coredhcp/plugins) repository.
+[coredhcp/plugins](https://github.com/insei/plugins) repository.
 
 ## Server with custom plugins
 
