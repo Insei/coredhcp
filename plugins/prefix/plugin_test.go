@@ -8,9 +8,12 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	dhcpIana "github.com/insomniacslk/dhcp/iana"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestRoundTrip(t *testing.T) {
 	reqIAID := [4]uint8{0x12, 0x34, 0x56, 0x78}
@@ -35,7 +38,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler, err := setup6("2001:db8::/48", "64")
+	handler, err := setup6(testsLogger, "2001:db8::/48", "64")
 	if err != nil {
 		t.Fatal(err)
 	}

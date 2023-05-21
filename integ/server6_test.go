@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 	"github.com/insomniacslk/dhcp/iana"
@@ -27,6 +28,8 @@ import (
 	"github.com/insei/coredhcp/plugins/file"
 	"github.com/insei/coredhcp/plugins/serverid"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 var serverConfig = config.Config{
 	Server6: &config.ServerConfig{
@@ -59,12 +62,12 @@ func runServer(readyCh chan<- struct{}, nsName string, desiredPlugins []*plugins
 	}
 	// register plugins
 	for _, pl := range desiredPlugins {
-		if err := plugins.RegisterPlugin(pl); err != nil {
+		if err := plugins.RegisterPlugin(testsLogger, pl); err != nil {
 			log.Panicf("Failed to register plugin `%s`: %v", pl.Name, err)
 		}
 	}
 	// start DHCP server
-	srv, err := server.Start(&serverConfig)
+	srv, err := server.Start(testsLogger, &serverConfig)
 	if err != nil {
 		log.Panicf("Server could not start: %v", err)
 	}

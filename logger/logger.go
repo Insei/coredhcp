@@ -44,3 +44,15 @@ func WithFile(log *logrus.Entry, logfile string) {
 func WithNoStdOutErr(log *logrus.Entry) {
 	log.Logger.SetOutput(ioutil.Discard)
 }
+
+// CreatePluginLogger returns a logger instance for the plugin
+func CreatePluginLogger(serverLogger logrus.FieldLogger, pluginName string, ipv6 bool) logrus.FieldLogger {
+	protocol := "v4"
+	if ipv6 {
+		protocol = "v6"
+	}
+	if serverLogger == nil {
+		return GetLogger("default").WithField("plugin", pluginName).WithField("protocol", protocol)
+	}
+	return serverLogger.WithField("plugin", pluginName).WithField("protocol", protocol)
+}

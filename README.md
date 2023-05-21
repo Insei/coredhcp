@@ -26,7 +26,7 @@ server6:
 ```
 
 For more complex examples, like how to listen on specific interfaces and
-configure other plugins, see [config.yml.example](cmds/coredhcp/config.yml.example).
+configure other plugins, see [config.yml.example](cmds/coredhcp/default-server.config.yml.example).
 
 ## Build and run
 
@@ -34,7 +34,7 @@ An example server is located under [cmds/coredhcp/](cmds/coredhcp/), so enter th
 directory first. To build a server with a custom set of plugins, see the "Server
 with custom plugins" section below.
 
-Once you have a working configuration in `config.yml` (see [config.yml.example](cmds/coredhcp/config.yml.example)), you can build and run the server:
+Once you have a working configuration in `config.yml` (see [config.yml.example](cmds/coredhcp/default-server.config.yml.example)), you can build and run the server:
 ```
 $ cd cmds/coredhcp
 $ go build

@@ -11,14 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/spf13/cast"
-	"github.com/spf13/viper"
 )
-
-var log = logger.GetLogger("config")
 
 type protocolVersion int
 
@@ -29,14 +25,14 @@ const (
 
 // Config holds the DHCPv6/v4 server configuration
 type Config struct {
-	v       *viper.Viper
 	Server6 *ServerConfig
 	Server4 *ServerConfig
+	Name    string
 }
 
 // New returns a new initialized instance of a Config object
 func New() *Config {
-	return &Config{v: viper.New()}
+	return &Config{}
 }
 
 // ServerConfig holds a server configuration that is specific to either the
@@ -50,37 +46,6 @@ type ServerConfig struct {
 type PluginConfig struct {
 	Name string
 	Args []string
-}
-
-// Load reads a configuration file and returns a Config object, or an error if
-// any.
-func Load(pathOverride string) (*Config, error) {
-	log.Print("Loading configuration")
-	c := New()
-	c.v.SetConfigType("yml")
-	if pathOverride != "" {
-		c.v.SetConfigFile(pathOverride)
-	} else {
-		c.v.SetConfigName("config")
-		c.v.AddConfigPath(".")
-		c.v.AddConfigPath("$XDG_CONFIG_HOME/coredhcp/")
-		c.v.AddConfigPath("$HOME/.coredhcp/")
-		c.v.AddConfigPath("/etc/coredhcp/")
-	}
-
-	if err := c.v.ReadInConfig(); err != nil {
-		return nil, err
-	}
-	if err := c.parseConfig(protocolV6); err != nil {
-		return nil, err
-	}
-	if err := c.parseConfig(protocolV4); err != nil {
-		return nil, err
-	}
-	if c.Server6 == nil && c.Server4 == nil {
-		return nil, ConfigErrorFromString("need at least one valid config for DHCPv6 or DHCPv4")
-	}
-	return c, nil
 }
 
 func protoVersionCheck(v protocolVersion) error {
@@ -142,7 +107,7 @@ func splitHostPort(hostport string) (ip string, zone string, port string, err er
 	return
 }
 
-func (c *Config) getListenAddress(addr string, ver protocolVersion) (*net.UDPAddr, error) {
+func getListenAddress(addr string, ver protocolVersion) (*net.UDPAddr, error) {
 	if err := protoVersionCheck(ver); err != nil {
 		return nil, err
 	}
@@ -193,51 +158,6 @@ func (c *Config) getListenAddress(addr string, ver protocolVersion) (*net.UDPAdd
 		Zone: ifname,
 	}
 	return &listener, nil
-}
-
-func (c *Config) getPlugins(ver protocolVersion) ([]PluginConfig, error) {
-	if err := protoVersionCheck(ver); err != nil {
-		return nil, err
-	}
-	pluginList := cast.ToSlice(c.v.Get(fmt.Sprintf("server%d.plugins", ver)))
-	if pluginList == nil {
-		return nil, ConfigErrorFromString("dhcpv%d: invalid plugins section, not a list or no plugin specified", ver)
-	}
-	return parsePlugins(pluginList)
-}
-
-func (c *Config) parseConfig(ver protocolVersion) error {
-	if err := protoVersionCheck(ver); err != nil {
-		return err
-	}
-	if exists := c.v.Get(fmt.Sprintf("server%d", ver)); exists == nil {
-		// it is valid to have no server configuration defined
-		return nil
-	}
-	// read plugin configuration
-	plugins, err := c.getPlugins(ver)
-	if err != nil {
-		return err
-	}
-	for _, p := range plugins {
-		log.Printf("DHCPv%d: found plugin `%s` with %d args: %v", ver, p.Name, len(p.Args), p.Args)
-	}
-
-	listeners, err := c.parseListen(ver)
-	if err != nil {
-		return err
-	}
-
-	sc := ServerConfig{
-		Addresses: listeners,
-		Plugins:   plugins,
-	}
-	if ver == protocolV6 {
-		c.Server6 = &sc
-	} else if ver == protocolV4 {
-		c.Server4 = &sc
-	}
-	return nil
 }
 
 // BUG(Natolumin): When listening on link-local multicast addresses without
@@ -292,50 +212,4 @@ func defaultListen(ver protocolVersion) ([]net.UDPAddr, error) {
 		return l, nil
 	}
 	return nil, errors.New("defaultListen: Incorrect protocol version")
-}
-
-func (c *Config) parseListen(ver protocolVersion) ([]net.UDPAddr, error) {
-	if err := protoVersionCheck(ver); err != nil {
-		return nil, err
-	}
-
-	listen := c.v.Get(fmt.Sprintf("server%d.listen", ver))
-
-	// Provide an emulation of the old keyword "interface" to avoid breaking config files
-	if iface := c.v.Get(fmt.Sprintf("server%d.interface", ver)); iface != nil && listen != nil {
-		return nil, ConfigErrorFromString("interface is a deprecated alias for listen, " +
-			"both cannot be used at the same time. Choose one and remove the other.")
-	} else if iface != nil {
-		listen = "%" + cast.ToString(iface)
-	}
-
-	if listen == nil {
-		return defaultListen(ver)
-	}
-
-	addrs, err := cast.ToStringSliceE(listen)
-	if err != nil {
-		addrs = []string{cast.ToString(listen)}
-	}
-
-	listeners := []net.UDPAddr{}
-	for _, a := range addrs {
-		l, err := c.getListenAddress(a, ver)
-		if err != nil {
-			return nil, err
-		}
-
-		if l.Zone == "" && (l.IP.IsLinkLocalMulticast() || l.IP.IsInterfaceLocalMulticast()) {
-			// link-local multicast specified without interface gets expanded to listen on all interfaces
-			expanded, err := expandLLMulticast(l)
-			if err != nil {
-				return nil, err
-			}
-			listeners = append(listeners, expanded...)
-			continue
-		}
-
-		listeners = append(listeners, *l)
-	}
-	return listeners, nil
 }

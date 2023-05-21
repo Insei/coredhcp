@@ -12,17 +12,18 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/sirupsen/logrus"
 )
+
+const pluginName = "lease_time"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name: "lease_time",
+	Name: pluginName,
 	// currently not supported for DHCPv6
 	Setup6: nil,
 	Setup4: setup4,
 }
-
-var log = logger.GetLogger("plugins/lease_time")
 
 type pluginState struct {
 	leaseTime time.Duration
@@ -40,16 +41,17 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 	return resp, false
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Print("loading `lease_time` plugin for DHCPv4")
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	plog := logger.CreatePluginLogger(serverLogger, pluginName, false)
+	plog.Print("loading `lease_time` plugin")
 	if len(args) < 1 {
-		log.Error("No default lease time provided")
+		plog.Error("No default lease time provided")
 		return nil, errors.New("lease_time failed to initialize")
 	}
 
 	leaseTime, err := time.ParseDuration(args[0])
 	if err != nil {
-		log.Errorf("invalid duration: %v", args[0])
+		plog.Errorf("invalid duration: %v", args[0])
 		return nil, errors.New("lease_time failed to initialize")
 	}
 	pState := pluginState{leaseTime: leaseTime}

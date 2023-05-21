@@ -9,10 +9,8 @@ import (
 
 	"github.com/insei/coredhcp/config"
 	"github.com/insei/coredhcp/handler"
-	"github.com/insei/coredhcp/logger"
+	"github.com/sirupsen/logrus"
 )
-
-var log = logger.GetLogger("plugins")
 
 // Plugin represents a plugin object.
 // Setup6 and Setup4 are the setup functions for DHCPv6 and DHCPv4 handlers
@@ -27,21 +25,21 @@ type Plugin struct {
 var RegisteredPlugins = make(map[string]*Plugin)
 
 // SetupFunc6 defines a plugin setup function for DHCPv6
-type SetupFunc6 func(args ...string) (handler.Handler6, error)
+type SetupFunc6 func(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error)
 
 // SetupFunc4 defines a plugin setup function for DHCPv6
-type SetupFunc4 func(args ...string) (handler.Handler4, error)
+type SetupFunc4 func(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error)
 
 // RegisterPlugin registers a plugin.
-func RegisterPlugin(plugin *Plugin) error {
+func RegisterPlugin(logger logrus.FieldLogger, plugin *Plugin) error {
 	if plugin == nil {
 		return errors.New("cannot register nil plugin")
 	}
-	log.Printf("Registering plugin '%s'", plugin.Name)
+	logger.Printf("Registering plugin '%s'", plugin.Name)
 	if _, ok := RegisteredPlugins[plugin.Name]; ok {
 		// TODO this highlights that asking the plugins to register themselves
 		// is not the right approach. Need to register them in the main program.
-		log.Panicf("Plugin '%s' is already registered", plugin.Name)
+		logger.Panicf("Plugin '%s' is already registered", plugin.Name)
 	}
 	RegisteredPlugins[plugin.Name] = plugin
 	return nil
@@ -53,8 +51,8 @@ func RegisterPlugin(plugin *Plugin) error {
 // plugin import time.
 // This function returns the list of loaded v6 plugins, the list of loaded v4
 // plugins, and an error if any.
-func LoadPlugins(conf *config.Config) ([]handler.Handler4, []handler.Handler6, error) {
-	log.Print("Loading plugins...")
+func LoadPlugins(serverLogger logrus.FieldLogger, conf *config.Config) ([]handler.Handler4, []handler.Handler6, error) {
+	serverLogger.Print("Loading plugins...")
 	handlers4 := make([]handler.Handler4, 0)
 	handlers6 := make([]handler.Handler6, 0)
 
@@ -70,12 +68,12 @@ func LoadPlugins(conf *config.Config) ([]handler.Handler4, []handler.Handler6, e
 	if conf.Server6 != nil {
 		for _, pluginConf := range conf.Server6.Plugins {
 			if plugin, ok := RegisteredPlugins[pluginConf.Name]; ok {
-				log.Printf("DHCPv6: loading plugin `%s`", pluginConf.Name)
+				serverLogger.Printf("DHCPv6: loading plugin `%s`", pluginConf.Name)
 				if plugin.Setup6 == nil {
-					log.Warningf("DHCPv6: plugin `%s` has no setup function for DHCPv6", pluginConf.Name)
+					serverLogger.Warningf("DHCPv6: plugin `%s` has no setup function for DHCPv6", pluginConf.Name)
 					continue
 				}
-				h6, err := plugin.Setup6(pluginConf.Args...)
+				h6, err := plugin.Setup6(serverLogger, pluginConf.Args...)
 				if err != nil {
 					return nil, nil, err
 				} else if h6 == nil {
@@ -92,12 +90,12 @@ func LoadPlugins(conf *config.Config) ([]handler.Handler4, []handler.Handler6, e
 	if conf.Server4 != nil {
 		for _, pluginConf := range conf.Server4.Plugins {
 			if plugin, ok := RegisteredPlugins[pluginConf.Name]; ok {
-				log.Printf("DHCPv4: loading plugin `%s`", pluginConf.Name)
+				serverLogger.Printf("DHCPv4: loading plugin `%s`", pluginConf.Name)
 				if plugin.Setup4 == nil {
-					log.Warningf("DHCPv4: plugin `%s` has no setup function for DHCPv4", pluginConf.Name)
+					serverLogger.Warningf("DHCPv4: plugin `%s` has no setup function for DHCPv4", pluginConf.Name)
 					continue
 				}
-				h4, err := plugin.Setup4(pluginConf.Args...)
+				h4, err := plugin.Setup4(serverLogger, pluginConf.Args...)
 				if err != nil {
 					return nil, nil, err
 				} else if h4 == nil {

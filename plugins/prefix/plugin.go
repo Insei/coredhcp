@@ -25,6 +25,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	dhcpIana "github.com/insomniacslk/dhcp/iana"
+	"github.com/sirupsen/logrus"
 	"github.com/willf/bitset"
 
 	"github.com/insei/coredhcp/handler"
@@ -34,17 +35,17 @@ import (
 	"github.com/insei/coredhcp/plugins/allocators/bitmap"
 )
 
-var log = logger.GetLogger("plugins/prefix")
+const pluginName = "prefix"
 
 // Plugin registers the prefix. Prefix delegation only exists for DHCPv6
 var Plugin = plugins.Plugin{
-	Name:   "prefix",
+	Name:   pluginName,
 	Setup6: setup6,
 }
 
 const leaseDuration = 3600 * time.Second
 
-func setup6(args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
 	// - prefix: 2001:db8::/48 64
 	if len(args) < 2 {
 		return nil, errors.New("Need both a subnet and an allocation max size")
@@ -60,8 +61,9 @@ func setup6(args ...string) (handler.Handler6, error) {
 		return nil, fmt.Errorf("Invalid prefix length: %v", err)
 	}
 
+	plog := logger.CreatePluginLogger(serverLogger, pluginName, true)
 	// TODO: select allocators based on heuristics or user configuration
-	alloc, err := bitmap.NewBitmapAllocator(*prefix, allocSize)
+	alloc, err := bitmap.NewBitmapAllocator(plog, *prefix, allocSize)
 	if err != nil {
 		return nil, fmt.Errorf("Could not initialize prefix allocator: %v", err)
 	}
@@ -69,6 +71,7 @@ func setup6(args ...string) (handler.Handler6, error) {
 	return (&pluginState{
 		Records:   make(map[string][]lease),
 		allocator: alloc,
+		log:       plog,
 	}).handle6, nil
 }
 
@@ -86,6 +89,7 @@ type pluginState struct {
 	// Since it's not valid utf-8 we can't use any other string function though
 	Records   map[string][]lease
 	allocator allocators.Allocator
+	log       logrus.FieldLogger
 }
 
 // samePrefix returns true if both prefixes are defined and equal
@@ -103,23 +107,23 @@ func recordKey(d *dhcpv6.Duid) string {
 }
 
 // Handle processes DHCPv6 packets for the prefix plugin for a given allocator/leaseset
-func (h *pluginState) handle6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
+func (p *pluginState) handle6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 	msg, err := req.GetInnerMessage()
 	if err != nil {
-		log.Error(err)
+		p.log.Error(err)
 		return nil, true
 	}
 
 	client := msg.Options.ClientID()
 	if client == nil {
-		log.Error("Invalid packet received, no clientID")
+		p.log.Error("Invalid packet received, no clientID")
 		return nil, true
 	}
 
 	// Each request IA_PD requires an IA_PD response
 	for _, iapd := range msg.Options.IAPD() {
 		if err != nil {
-			log.Errorf("Malformed IAPD received: %v", err)
+			p.log.Errorf("Malformed IAPD received: %v", err)
 			resp.AddOption(&dhcpv6.OptStatusCode{StatusCode: dhcpIana.StatusMalformedQuery})
 			return resp, true
 		}
@@ -142,8 +146,8 @@ func (h *pluginState) handle6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 
 		// A possible simple optimization here would be to be able to lock single map values
 		// individually instead of the whole map, since we lock for some amount of time
-		h.Lock()
-		knownLeases := h.Records[recordKey(client)]
+		p.Lock()
+		knownLeases := p.Records[recordKey(client)]
 		// Bitmap to track which leases are already given in this exchange
 		givenOut := bitset.New(uint(len(knownLeases)))
 
@@ -217,9 +221,9 @@ func (h *pluginState) handle6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 				// function to avoid repeated nullpointer checks
 				prefix.Prefix = &net.IPNet{}
 			}
-			allocated, err := h.allocator.Allocate(*prefix.Prefix)
+			allocated, err := p.allocator.Allocate(*prefix.Prefix)
 			if err != nil {
-				log.Debugf("Nothing allocated for hinted prefix %s", prefix)
+				p.log.Debugf("Nothing allocated for hinted prefix %s", prefix)
 				continue
 			}
 			l := lease{
@@ -229,16 +233,16 @@ func (h *pluginState) handle6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 
 			addPrefix(iapdResp, l)
 			newLeases = append(knownLeases, l)
-			log.Debugf("Allocated %s to %s (IAID: %x)", &allocated, client, iapd.IaId)
+			p.log.Debugf("Allocated %s to %s (IAID: %x)", &allocated, client, iapd.IaId)
 		}
 
 		if newLeases != nil {
-			h.Records[recordKey(client)] = newLeases
+			p.Records[recordKey(client)] = newLeases
 		}
-		h.Unlock()
+		p.Unlock()
 
 		if len(iapdResp.Options.Options) == 0 {
-			log.Debugf("No valid prefix to return for IAID %x", iapd.IaId)
+			p.log.Debugf("No valid prefix to return for IAID %x", iapd.IaId)
 			iapdResp.Options.Add(&dhcpv6.OptStatusCode{
 				StatusCode: dhcpIana.StatusNoPrefixAvail,
 			})

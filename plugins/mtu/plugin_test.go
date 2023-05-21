@@ -8,9 +8,12 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/stretchr/testify/assert"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestAddServer4(t *testing.T) {
 	req, err := dhcpv4.NewDiscovery(net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}, dhcpv4.WithRequestedOptions(dhcpv4.OptionInterfaceMTU))
@@ -22,7 +25,7 @@ func TestAddServer4(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler4, err := setup4("1500")
+	handler4, err := setup4(testsLogger, "1500")
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -51,7 +54,7 @@ func TestNotRequested4(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler4, err := setup4("1500")
+	handler4, err := setup4(testsLogger, "1500")
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}

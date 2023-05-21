@@ -17,13 +17,11 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/willf/bitset"
 
-	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins/allocators"
 )
-
-var log = logger.GetLogger("plugins/allocators/bitmap")
 
 // Allocator is a prefix allocator allocating in chunks of a fixed size
 // regardless of the size requested by the client.
@@ -107,8 +105,8 @@ func (a *Allocator) Free(prefix net.IPNet) error {
 
 // NewBitmapAllocator creates a new allocator, allocating /`size` prefixes
 // carved out of the given `pool` prefix
-func NewBitmapAllocator(pool net.IPNet, size int) (*Allocator, error) {
-
+func NewBitmapAllocator(logger logrus.FieldLogger, pool net.IPNet, size int) (*Allocator, error) {
+	log := logger.WithField("plugin", "allocator: bitmap")
 	poolSize, _ := pool.Mask.Size()
 	allocOrder := size - poolSize
 

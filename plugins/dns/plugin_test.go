@@ -8,10 +8,13 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/stretchr/testify/assert"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestAddServer6(t *testing.T) {
 	req, err := dhcpv6.NewMessage()
@@ -30,7 +33,7 @@ func TestAddServer6(t *testing.T) {
 		"2001:db8::1",
 		"2001:db8::3",
 	}
-	handler6, err := setup6(dnsServers...)
+	handler6, err := setup6(testsLogger, dnsServers...)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -71,7 +74,7 @@ func TestNotRequested6(t *testing.T) {
 		"2001:db8::1",
 		"2001:db8::3",
 	}
-	handler6, err := setup6(dnsServers...)
+	handler6, err := setup6(testsLogger, dnsServers...)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -98,7 +101,7 @@ func TestAddServer4(t *testing.T) {
 		"192.0.2.1",
 		"192.0.2.3",
 	}
-	handler4, err := setup4(dnsServers...)
+	handler4, err := setup4(testsLogger, dnsServers...)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}
@@ -132,7 +135,7 @@ func TestNotRequested4(t *testing.T) {
 	dnsServers := []string{
 		"192.0.2.1",
 	}
-	handler4, err := setup4(dnsServers...)
+	handler4, err := setup4(testsLogger, dnsServers...)
 	if err != nil {
 		t.Errorf("failed to setup dns plugin: %s", err)
 	}

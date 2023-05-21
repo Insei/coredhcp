@@ -43,17 +43,17 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	autoRefreshArg = "autorefresh"
+	pluginName     = "file"
 )
-
-var log = logger.GetLogger("plugins/file")
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "file",
+	Name:   pluginName,
 	Setup6: setup6,
 	Setup4: setup4,
 }
@@ -62,13 +62,13 @@ type pluginState struct {
 	recLock sync.RWMutex
 	// staticRecords holds a MAC -> IP address mapping
 	staticRecords map[string]net.IP
+	log           logrus.FieldLogger
 }
 
 // LoadDHCPv4Records loads the DHCPv4Records global map with records stored on
 // the specified file. The records have to be one per line, a mac address and an
 // IPv4 address.
 func LoadDHCPv4Records(filename string) (map[string]net.IP, error) {
-	log.Infof("reading leases from %s", filename)
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,6 @@ func LoadDHCPv4Records(filename string) (map[string]net.IP, error) {
 // the specified file. The records have to be one per line, a mac address and an
 // IPv6 address.
 func LoadDHCPv6Records(filename string) (map[string]net.IP, error) {
-	log.Infof("reading leases from %s", filename)
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -139,31 +138,31 @@ func LoadDHCPv6Records(filename string) (map[string]net.IP, error) {
 func (p *pluginState) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 	m, err := req.GetInnerMessage()
 	if err != nil {
-		log.Errorf("BUG: could not decapsulate: %v", err)
+		p.log.Errorf("BUG: could not decapsulate: %v", err)
 		return nil, true
 	}
 
 	if m.Options.OneIANA() == nil {
-		log.Debug("No address requested")
+		p.log.Debug("No address requested")
 		return resp, false
 	}
 
 	mac, err := dhcpv6.ExtractMAC(req)
 	if err != nil {
-		log.Warningf("Could not find client MAC, passing")
+		p.log.Warningf("Could not find client MAC, passing")
 		return resp, false
 	}
-	log.Debugf("looking up an IP address for MAC %s", mac.String())
+	p.log.Debugf("looking up an IP address for MAC %s", mac.String())
 
 	p.recLock.RLock()
 	defer p.recLock.RUnlock()
 
 	ipaddr, ok := p.staticRecords[mac.String()]
 	if !ok {
-		log.Warningf("MAC address %s is unknown", mac.String())
+		p.log.Warningf("MAC address %s is unknown", mac.String())
 		return resp, false
 	}
-	log.Debugf("found IP address %s for MAC %s", ipaddr, mac.String())
+	p.log.Debugf("found IP address %s for MAC %s", ipaddr, mac.String())
 
 	resp.AddOption(&dhcpv6.OptIANA{
 		IaId: m.Options.OneIANA().IaId,
@@ -185,27 +184,29 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 
 	ipaddr, ok := p.staticRecords[req.ClientHWAddr.String()]
 	if !ok {
-		log.Warningf("MAC address %s is unknown", req.ClientHWAddr.String())
+		p.log.Warningf("MAC address %s is unknown", req.ClientHWAddr.String())
 		return resp, false
 	}
 	resp.YourIPAddr = ipaddr
-	log.Debugf("found IP address %s for MAC %s", ipaddr, req.ClientHWAddr.String())
+	p.log.Debugf("found IP address %s for MAC %s", ipaddr, req.ClientHWAddr.String())
 	return resp, true
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginState{
 		recLock:       sync.RWMutex{},
 		staticRecords: map[string]net.IP{},
+		log:           logger.CreatePluginLogger(serverLogger, pluginName, true),
 	}
 	h6, _, err := pState.setupFile(true, args...)
 	return h6, err
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{
 		recLock:       sync.RWMutex{},
 		staticRecords: map[string]net.IP{},
+		log:           logger.CreatePluginLogger(serverLogger, pluginName, false),
 	}
 	_, h4, err := pState.setupFile(false, args...)
 	return h4, err
@@ -246,33 +247,31 @@ func (p *pluginState) setupFile(v6 bool, args ...string) (handler.Handler6, hand
 			for range watcher.Events {
 				err := p.loadFromFile(v6, filename)
 				if err != nil {
-					log.Warningf("failed to refresh from %s: %s", filename, err)
+					p.log.Warningf("failed to refresh from %s: %s", filename, err)
 
 					continue
 				}
 
-				log.Infof("updated to %d leases from %s", len(p.staticRecords), filename)
+				p.log.Infof("updated to %d leases from %s", len(p.staticRecords), filename)
 			}
 		}()
 	}
 
-	log.Infof("loaded %d leases from %s", len(p.staticRecords), filename)
+	p.log.Infof("loaded %d leases from %s", len(p.staticRecords), filename)
 	return p.Handler6, p.Handler4, nil
 }
 
 func (p *pluginState) loadFromFile(v6 bool, filename string) error {
 	var err error
 	var records map[string]net.IP
-	var protver int
+	p.log.Infof("reading leases from %s", filename)
 	if v6 {
-		protver = 6
 		records, err = LoadDHCPv6Records(filename)
 	} else {
-		protver = 4
 		records, err = LoadDHCPv4Records(filename)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to load DHCPv%d records: %w", protver, err)
+		return fmt.Errorf("failed to load DHCP records: %w", err)
 	}
 
 	p.recLock.Lock()

@@ -15,13 +15,14 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/sirupsen/logrus"
 )
 
-var log = logger.GetLogger("plugins/server_id")
+const pluginName = "server_id"
 
 // Plugin wraps plugin registration information
 var Plugin = plugins.Plugin{
-	Name:   "server_id",
+	Name:   pluginName,
 	Setup6: setup6,
 	Setup4: setup4,
 }
@@ -29,23 +30,25 @@ var Plugin = plugins.Plugin{
 type pluginStateV6 struct {
 	// v6ServerID is the DUID of the v6 server
 	serverID *dhcpv6.Duid
+	log      logrus.FieldLogger
 }
 
 type pluginStateV4 struct {
 	serverID net.IP
+	log      logrus.FieldLogger
 }
 
 // Handler6 handles DHCPv6 packets for the server_id plugin.
 func (p pluginStateV6) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 	if p.serverID == nil {
-		log.Fatal("BUG: Plugin is running uninitialized!")
+		p.log.Fatal("BUG: Plugin is running uninitialized!")
 		return nil, true
 	}
 
 	msg, err := req.GetInnerMessage()
 	if err != nil {
 		// BUG: this should already have failed in the main handler. Abort
-		log.Error(err)
+		p.log.Error(err)
 		return nil, true
 	}
 
@@ -60,7 +63,7 @@ func (p pluginStateV6) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 
 		// Approximately all others MUST be discarded if the ServerID doesn't match
 		if !sid.Equal(*p.serverID) {
-			log.Infof("requested server ID does not match this server's ID. Got %v, want %v", sid, *p.serverID)
+			p.log.Infof("requested server ID does not match this server's ID. Got %v, want %v", sid, *p.serverID)
 			return nil, true
 		}
 	} else if msg.MessageType == dhcpv6.MessageTypeRequest ||
@@ -78,18 +81,18 @@ func (p pluginStateV6) Handler6(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
 // Handler4 handles DHCPv4 packets for the server_id plugin.
 func (p pluginStateV4) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) {
 	if p.serverID == nil {
-		log.Fatal("BUG: Plugin is running uninitialized!")
+		p.log.Fatal("BUG: Plugin is running uninitialized!")
 		return nil, true
 	}
 	if req.OpCode != dhcpv4.OpcodeBootRequest {
-		log.Warningf("not a BootRequest, ignoring")
+		p.log.Warningf("not a BootRequest, ignoring")
 		return resp, false
 	}
 	if req.ServerIPAddr != nil &&
 		!req.ServerIPAddr.Equal(net.IPv4zero) &&
 		!req.ServerIPAddr.Equal(p.serverID) {
 		// This request is not for us, drop it.
-		log.Infof("requested server ID does not match this server's ID. Got %v, want %v", req.ServerIPAddr, p.serverID)
+		p.log.Infof("requested server ID does not match this server's ID. Got %v, want %v", req.ServerIPAddr, p.serverID)
 		return nil, true
 	}
 	resp.ServerIPAddr = make(net.IP, net.IPv4len)
@@ -98,8 +101,9 @@ func (p pluginStateV4) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool)
 	return resp, false
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
-	log.Printf("loading `server_id` plugin for DHCPv4 with args: %v", args)
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+	pState := &pluginStateV4{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
+	pState.log.Printf("loading `server_id` plugin for DHCPv4 with args: %v", args)
 	if len(args) < 1 {
 		return nil, errors.New("need an argument")
 	}
@@ -110,11 +114,13 @@ func setup4(args ...string) (handler.Handler4, error) {
 	if serverID.To4() == nil {
 		return nil, errors.New("not a valid IPv4 address")
 	}
-	return (&pluginStateV4{serverID: serverID.To4()}).Handler4, nil
+	pState.serverID = serverID.To4()
+	return pState.Handler4, nil
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
-	log.Printf("loading `server_id` plugin for DHCPv6 with args: %v", args)
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+	pState := &pluginStateV6{log: logger.CreatePluginLogger(serverLogger, pluginName, true)}
+	pState.log.Printf("loading `server_id` plugin for DHCPv6 with args: %v", args)
 	if len(args) < 2 {
 		return nil, errors.New("need a DUID type and value")
 	}
@@ -154,6 +160,7 @@ func setup6(args ...string) (handler.Handler6, error) {
 	default:
 		return nil, errors.New("Opaque DUID type not supported yet")
 	}
-	log.Printf("using %s %s", duidType, duidValue)
-	return (&pluginStateV6{serverID: v6ServerID}).Handler6, nil
+	pState.serverID = v6ServerID
+	pState.log.Printf("using %s %s", duidType, duidValue)
+	return pState.Handler6, nil
 }

@@ -15,12 +15,10 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/sirupsen/logrus"
 )
 
-var (
-	pluginName = "sleep"
-	log        = logger.GetLogger("plugins/" + pluginName)
-)
+const pluginName = "sleep"
 
 // Example configuration of the `sleep` plugin:
 //
@@ -44,7 +42,12 @@ var Plugin = plugins.Plugin{
 	Setup4: setup4,
 }
 
-func setup6(args ...string) (handler.Handler6, error) {
+type pluginState struct {
+	delay time.Duration
+	log   logrus.FieldLogger
+}
+
+func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("want exactly one argument, got %d", len(args))
 	}
@@ -52,11 +55,15 @@ func setup6(args ...string) (handler.Handler6, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse duration: %w", err)
 	}
-	log.Printf("loaded plugin for DHCPv6.")
-	return makeSleepHandler6(delay), nil
+	pState := &pluginState{
+		delay: delay,
+		log:   logger.CreatePluginLogger(serverLogger, pluginName, true),
+	}
+	pState.log.Printf("loaded plugin for DHCPv6.")
+	return makeSleepHandler6(pState), nil
 }
 
-func setup4(args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("want exactly one argument, got %d", len(args))
 	}
@@ -64,26 +71,30 @@ func setup4(args ...string) (handler.Handler4, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse duration: %w", err)
 	}
-	log.Printf("loaded plugin for DHCPv4.")
-	return makeSleepHandler4(delay), nil
+	pState := &pluginState{
+		delay: delay,
+		log:   logger.CreatePluginLogger(serverLogger, pluginName, true),
+	}
+	pState.log.Printf("loaded plugin for DHCPv4.")
+	return makeSleepHandler4(pState), nil
 }
 
-func makeSleepHandler6(delay time.Duration) handler.Handler6 {
+func makeSleepHandler6(pState *pluginState) handler.Handler6 {
 	return func(req, resp dhcpv6.DHCPv6) (dhcpv6.DHCPv6, bool) {
-		log.Printf("introducing delay of %s in response", delay)
+		pState.log.Printf("introducing delay of %s in response", pState.delay)
 		// return the unmodified response, and instruct coredhcp to continue to
 		// the next plugin.
-		time.Sleep(delay)
+		time.Sleep(pState.delay)
 		return resp, false
 	}
 }
 
-func makeSleepHandler4(delay time.Duration) handler.Handler4 {
+func makeSleepHandler4(pState *pluginState) handler.Handler4 {
 	return func(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) {
-		log.Printf("introducing delay of %s in response", delay)
+		pState.log.Printf("introducing delay of %s in response", pState.delay)
 		// return the unmodified response, and instruct coredhcp to continue to
 		// the next plugin.
-		time.Sleep(delay)
+		time.Sleep(pState.delay)
 		return resp, false
 	}
 }

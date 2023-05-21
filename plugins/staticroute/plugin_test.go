@@ -5,33 +5,37 @@
 package staticroute
 
 import (
-	"github.com/insomniacslk/dhcp/dhcpv4"
 	"testing"
+
+	"github.com/insei/coredhcp/logger"
+	"github.com/insomniacslk/dhcp/dhcpv4"
 
 	"github.com/stretchr/testify/assert"
 )
 
+var testsLogger = logger.GetLogger("tests")
+
 func TestSetup4(t *testing.T) {
 	// no args
-	_, err := setup4()
+	_, err := setup4(testsLogger)
 	if assert.Error(t, err) {
 		assert.Equal(t, "need at least one static route", err.Error())
 	}
 
 	// invalid arg
-	_, err = setup4("foo")
+	_, err = setup4(testsLogger, "foo")
 	if assert.Error(t, err) {
 		assert.Equal(t, "expected a destination/gateway pair, got: foo", err.Error())
 	}
 
 	// invalid destination
-	_, err = setup4("foo,")
+	_, err = setup4(testsLogger, "foo,")
 	if assert.Error(t, err) {
 		assert.Equal(t, "expected a destination subnet, got: foo", err.Error())
 	}
 
 	// invalid gateway
-	_, err = setup4("10.0.0.0/8,foo")
+	_, err = setup4(testsLogger, "10.0.0.0/8,foo")
 	if assert.Error(t, err) {
 		assert.Equal(t, "expected a gateway address, got: foo", err.Error())
 	}
@@ -45,7 +49,7 @@ func TestHandler4(t *testing.T) {
 	}
 
 	// valid route
-	handler4, err := setup4("10.0.0.0/8,192.168.1.1")
+	handler4, err := setup4(testsLogger, "10.0.0.0/8,192.168.1.1")
 	result, stop := handler4(req, resp)
 	assert.Same(t, result, resp)
 	assert.False(t, stop)
@@ -65,7 +69,7 @@ func TestHandler4(t *testing.T) {
 	resp.Options = dhcpv4.Options{}
 
 	// multiple valid routes
-	handler4, err = setup4("10.0.0.0/8,192.168.1.1", "192.168.2.0/24,192.168.1.100")
+	handler4, err = setup4(testsLogger, "10.0.0.0/8,192.168.1.1", "192.168.2.0/24,192.168.1.100")
 	result, stop = handler4(req, resp)
 	assert.Same(t, result, resp)
 	assert.False(t, stop)

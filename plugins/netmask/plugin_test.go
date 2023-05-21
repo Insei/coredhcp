@@ -8,9 +8,12 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/stretchr/testify/assert"
 )
+
+var testsLogger = logger.GetLogger("tests")
 
 func TestCheckValidNetmask(t *testing.T) {
 	assert.True(t, checkValidNetmask(net.IPv4Mask(255, 255, 255, 0)))
@@ -25,7 +28,7 @@ func TestCheckValidNetmask(t *testing.T) {
 
 func TestHandler4(t *testing.T) {
 	// set plugin netmask
-	handler4, err := setup4("255.255.255.0")
+	handler4, err := setup4(testsLogger, "255.255.255.0")
 	if err != nil {
 		t.Errorf("failed to setup netmask plugin: %s", err)
 	}
@@ -45,22 +48,22 @@ func TestHandler4(t *testing.T) {
 
 func TestSetup4(t *testing.T) {
 	// valid configuration
-	_, err := setup4("255.255.255.0")
+	_, err := setup4(testsLogger, "255.255.255.0")
 	assert.NoError(t, err)
 
 	// no configuration
-	_, err = setup4()
+	_, err = setup4(testsLogger)
 	assert.Error(t, err)
 
 	// unspecified netmask
-	_, err = setup4("0.0.0.0")
+	_, err = setup4(testsLogger, "0.0.0.0")
 	assert.Error(t, err)
 
 	// ipv6 prefix
-	_, err = setup4("ff02::/64")
+	_, err = setup4(testsLogger, "ff02::/64")
 	assert.Error(t, err)
 
 	// invalid netmask
-	_, err = setup4("0.0.0.255")
+	_, err = setup4(testsLogger, "0.0.0.255")
 	assert.Error(t, err)
 }
