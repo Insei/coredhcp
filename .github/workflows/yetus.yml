@@ -11,13 +11,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          path: .
+          path: src
           fetch-depth: 0
 
       - name: Yetus
         uses: apache/yetus-test-patch-action@0.14.1
         with:
-          basedir: .
+          basedir: src
           buildtool: nobuild
           continuousimprovement: true
           githubtoken: ${{ secrets.GITHUB_TOKEN }}
