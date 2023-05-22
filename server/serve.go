@@ -9,7 +9,6 @@ import (
 	"io"
 	"net"
 
-	"github.com/insei/coredhcp/logger"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
@@ -21,18 +20,18 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv6/server6"
 )
 
-var log = logger.GetLogger("server")
-
 type listener6 struct {
 	*ipv6.PacketConn
 	net.Interface
 	handlers []handler.Handler6
+	log      logrus.FieldLogger
 }
 
 type listener4 struct {
 	*ipv4.PacketConn
 	net.Interface
 	handlers []handler.Handler4
+	log      logrus.FieldLogger
 }
 
 type listener interface {
@@ -43,12 +42,12 @@ type listener interface {
 type Servers struct {
 	listeners []listener
 	errors    chan error
-	log       logrus.FieldLogger
+	Log       logrus.FieldLogger
 }
 
-func listen4(a *net.UDPAddr) (*listener4, error) {
+func listen4(logger logrus.FieldLogger, a *net.UDPAddr) (*listener4, error) {
 	var err error
-	l4 := listener4{}
+	l4 := listener4{log: logger}
 	udpConn, err := server4.NewIPv4UDPConn(a.Zone, a)
 	if err != nil {
 		return nil, err
@@ -80,8 +79,8 @@ func listen4(a *net.UDPAddr) (*listener4, error) {
 	return &l4, nil
 }
 
-func listen6(a *net.UDPAddr) (*listener6, error) {
-	l6 := listener6{}
+func listen6(logger logrus.FieldLogger, a *net.UDPAddr) (*listener6, error) {
+	l6 := listener6{log: logger}
 	udpconn, err := server6.NewIPv6UDPConn(a.Zone, a)
 	if err != nil {
 		return nil, err
@@ -122,7 +121,7 @@ func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
 	}
 	srv := Servers{
 		errors: make(chan error),
-		log:    serverLogger,
+		Log:    serverLogger,
 	}
 
 	// listen
@@ -130,7 +129,7 @@ func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
 		serverLogger.Println("Starting DHCPv6 server")
 		for _, addr := range config.Server6.Addresses {
 			var l6 *listener6
-			l6, err = listen6(&addr)
+			l6, err = listen6(serverLogger, &addr)
 			if err != nil {
 				goto cleanup
 			}
@@ -146,7 +145,7 @@ func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
 		serverLogger.Println("Starting DHCPv4 server")
 		for _, addr := range config.Server4.Addresses {
 			var l4 *listener4
-			l4, err = listen4(&addr)
+			l4, err = listen4(serverLogger, &addr)
 			if err != nil {
 				goto cleanup
 			}
@@ -167,7 +166,7 @@ cleanup:
 
 // Wait waits until the end of the execution of the server.
 func (s *Servers) Wait() error {
-	s.log.Debug("Waiting")
+	s.Log.Debug("Waiting")
 	err := <-s.errors
 	s.Close()
 	return err
