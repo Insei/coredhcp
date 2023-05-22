@@ -102,18 +102,20 @@ func main() {
 		logger.WithNoStdOutErr(log)
 	}
 
-	parser := config.NewParser(log)
-	config, err := parser.Parse(*flagConfig)
-	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
-	}
-	serverLogger := logger.GetLogger(config.Name)
 	// register plugins
 	for _, plugin := range desiredPlugins {
 		if err := plugins.RegisterPlugin(log, plugin); err != nil {
 			log.Fatalf("Failed to register plugin '%s': %v", plugin.Name, err)
 		}
 	}
+
+	// parse config
+	parser := config.NewParser(log)
+	config, err := parser.Parse(*flagConfig)
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+	serverLogger := logger.GetLogger(config.Name)
 
 	// start server
 	srv, err := server.Start(serverLogger, config)
