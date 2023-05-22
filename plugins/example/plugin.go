@@ -2,6 +2,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// Package example is example plugin
 package example
 
 // This is an example plugin that inspects a packet and prints it out. The code
@@ -59,6 +60,9 @@ import (
 
 const pluginName = "example"
 
+// Plugin represents a plugin object.
+//// Setup6 and Setup4 are the setup functions for DHCPv6 and DHCPv4 handlers
+//// respectively. Both setup functions can be nil.
 var Plugin = plugins.Plugin{
 	Name:   pluginName,
 	Setup6: setup6,
@@ -80,7 +84,8 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	pState := &pluginState{
 		log: logger.CreatePluginLogger(serverLogger, pluginName, true),
 	}
-	pState.log.Printf("loaded plugin for DHCPv6.")
+	pState.log.Printf("loaded plugin")
+	pState.log.Printf("args: %s", args)
 	return pState.exampleHandler6, nil
 }
 
@@ -90,7 +95,8 @@ func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, 
 	pState := &pluginState{
 		log: logger.CreatePluginLogger(serverLogger, pluginName, false),
 	}
-	pState.log.Printf("loaded plugin for DHCPv4.")
+	pState.log.Printf("loaded plugin")
+	pState.log.Printf("args: %s", args)
 	return pState.exampleHandler4, nil
 }
 
