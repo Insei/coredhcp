@@ -26,7 +26,7 @@ server6:
 ```
 
 For more complex examples, like how to listen on specific interfaces and
-configure other plugins, see [config.yml.example](cmds/coredhcp/default-server.config.yml.example).
+configure other plugins, see [default-server.config.yml.example](cmds/coredhcp/default-server.config.yml.example).
 
 ## Build and run
 
@@ -34,27 +34,68 @@ An example server is located under [cmds/coredhcp/](cmds/coredhcp/), so enter th
 directory first. To build a server with a custom set of plugins, see the "Server
 with custom plugins" section below.
 
-Once you have a working configuration in `config.yml` (see [config.yml.example](cmds/coredhcp/default-server.config.yml.example)), you can build and run the server:
+Once you have a working configuration in `default-server.config.yml` (see [default-server.config.yml.example](cmds/coredhcp/default-server.config.yml.example)), you can build and run the server:
 ```
 $ cd cmds/coredhcp
 $ go build
 $ sudo ./coredhcp
-INFO[2019-01-05T22:28:07Z] Registering plugin "file"
-INFO[2019-01-05T22:28:07Z] Registering plugin "server_id"
-INFO[2019-01-05T22:28:07Z] Loading configuration
-INFO[2019-01-05T22:28:07Z] Found plugin: `server_id` with 2 args, `[LL 00:de:ad:be:ef:00]`
-INFO[2019-01-05T22:28:07Z] Found plugin: `file` with 1 args, `[leases.txt]`
-INFO[2019-01-05T22:28:07Z] Loading plugins...
-INFO[2019-01-05T22:28:07Z] Loading plugin `server_id`
-INFO[2019-01-05T22:28:07Z] plugins/server_id: loading `server_id` plugin
-INFO[2019-01-05T22:28:07Z] plugins/server_id: using ll 00:de:ad:be:ef:00
-INFO[2019-01-05T22:28:07Z] Loading plugin `file`
-INFO[2019-01-05T22:28:07Z] plugins/file: reading leases from leases.txt
-INFO[2019-01-05T22:28:07Z] plugins/file: loaded 1 leases from leases.txt
-INFO[2019-01-05T22:28:07Z] Starting DHCPv6 listener on [::]:547
-INFO[2019-01-05T22:28:07Z] Waiting
-2019/01/05 22:28:07 Server listening on [::]:547
-2019/01/05 22:28:07 Ready to handle requests
+[2023-05-22T11:58:27+03:00]  INFO main: Setting log level to 'info'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'dns'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'file'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'lease_time'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'mtu'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'nbp'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'netmask'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'prefix'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'range'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'router'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'searchdomains'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'server_id'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'sleep'
+[2023-05-22T11:58:27+03:00]  INFO main: Registering plugin 'staticroute'
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: Loading configuration
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv6: found plugin `server_id` with 2 args: [LL 00:de:ad:be:ef:00]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv6: found plugin `file` with 1 args: [leases.txt]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv6: found plugin `dns` with 2 args: [2001:4860:4860::8888 2001:4860:4860::8844]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv6: found plugin `nbp` with 1 args: [http://[2001:db8:a::1]/nbp]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv6: found plugin `prefix` with 2 args: [2001:db8::/48 64]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `lease_time` with 1 args: [3600s]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `server_id` with 1 args: [10.10.10.1]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `dns` with 2 args: [8.8.8.8 8.8.4.4]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `router` with 1 args: [192.168.1.1]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `netmask` with 1 args: [255.255.255.0]
+[2023-05-22T11:58:27+03:00]  INFO config-parser: default-server: DHCPv4: found plugin `range` with 4 args: [leases.txt 10.10.10.100 10.10.10.200 60s]
+[2023-05-22T11:58:27+03:00]  INFO default-server: Loading plugins...
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: loading plugin `server_id`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: plugin: server_id: loading `server_id` plugin for DHCPv6 with args: [LL 00:de:ad:be:ef:00]
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: plugin: server_id: using ll 00:de:ad:be:ef:00
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: loading plugin `file`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: plugin: file: reading leases from leases.txt
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: plugin: file: loaded 0 leases from leases.txt
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: loading plugin `dns`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: plugin: dns: loaded 2 DNS servers.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: loading plugin `nbp`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: nbp: loaded NBP plugin for DHCPv6.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv6: loading plugin `prefix`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `lease_time`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: lease_time: loading `lease_time` plugin
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `server_id`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: server_id: loading `server_id` plugin for DHCPv4 with args: [10.10.10.1]
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `dns`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: dns: loaded plugin for DHCPv4.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: dns: loaded 2 DNS servers.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `router`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: router: Loaded plugin for DHCPv4.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: router: loaded 1 router IP addresses.
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `netmask`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: netmask: loaded plugin for DHCPv4
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: netmask: loaded client netmask
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: loading plugin `range`
+[2023-05-22T11:58:27+03:00]  INFO default-server: DHCPv4: plugin: range: Loaded 0 DHCPv4 leases from leases.txt
+[2023-05-22T11:58:27+03:00]  INFO default-server: Starting DHCPv6 server
+[2023-05-22T11:58:27+03:00]  INFO default-server: Starting DHCPv4 server
+[2023-05-22T11:58:27+03:00]  INFO default-server: Listen 0.0.0.0:67
+[2023-05-22T11:58:27+03:00]  INFO default-server: Listen [::]:547
 ...
 ```
 
