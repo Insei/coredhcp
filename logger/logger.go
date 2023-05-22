@@ -5,6 +5,7 @@
 package logger
 
 import (
+	"fmt"
 	"io/ioutil"
 	"sync"
 
@@ -18,6 +19,41 @@ var (
 	getLoggerMutex sync.Mutex
 )
 
+type pluginFormatter struct {
+	log_prefixed.TextFormatter
+}
+
+func (f *pluginFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	messagePrefix := ""
+	server, ok := entry.Data["server"]
+	if ok {
+		messagePrefix += fmt.Sprintf("%s: ", server)
+		delete(entry.Data, "server")
+	}
+	proto, ok := entry.Data["protocol"]
+	if ok {
+		messagePrefix += fmt.Sprintf("DHCP%s: ", proto)
+		delete(entry.Data, "protocol")
+	}
+	plugin, ok := entry.Data["plugin"]
+	if ok {
+		messagePrefix += fmt.Sprintf("plugin: %s: ", plugin)
+		delete(entry.Data, "plugin")
+	}
+	entry.Message = messagePrefix + entry.Message
+	format, _ := f.TextFormatter.Format(entry)
+	if plugin != nil {
+		entry.Data["plugin"] = plugin
+	}
+	if proto != nil {
+		entry.Data["protocol"] = proto
+	}
+	if server != nil {
+		entry.Data["server"] = server
+	}
+	return format, nil
+}
+
 // GetLogger returns a configured logger instance
 func GetLogger(prefix string) *logrus.Entry {
 	if prefix == "" {
@@ -27,8 +63,10 @@ func GetLogger(prefix string) *logrus.Entry {
 		getLoggerMutex.Lock()
 		defer getLoggerMutex.Unlock()
 		logger := logrus.New()
-		logger.SetFormatter(&log_prefixed.TextFormatter{
-			FullTimestamp: true,
+		logger.SetFormatter(&pluginFormatter{
+			TextFormatter: log_prefixed.TextFormatter{
+				FullTimestamp: true,
+			},
 		})
 		globalLogger = logger
 	}
