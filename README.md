@@ -1,7 +1,7 @@
 # coredhcp
 
-[![Build Status](https://travis-ci.org/coredhcp/coredhcp.svg?branch=master)](https://travis-ci.org/coredhcp/coredhcp)
-[![codecov](https://codecov.io/gh/coredhcp/coredhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/coredhcp/coredhcp)
+[![Build](https://github.com/insei/coredhcp/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/insei/coredhcp/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/insei/coredhcp/branch/main/graph/badge.svg)](https://codecov.io/gh/insei/coredhcp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/insei/coredhcp)](https://goreportcard.com/report/github.com/insei/coredhcp)
 
 Fast, multithreaded, modular and extensible DHCP server written in Go
