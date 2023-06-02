@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func TestAddServer4(t *testing.T) {
 	req, err := dhcpv4.NewDiscovery(net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}, dhcpv4.WithRequestedOptions(dhcpv4.OptionInterfaceMTU))

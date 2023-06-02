@@ -18,7 +18,7 @@ import (
 	"github.com/insomniacslk/dhcp/iana"
 )
 
-var log = logger.GetLogger("main")
+var log = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func main() {
 	flag.Parse()

@@ -13,7 +13,6 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "dns"
@@ -27,10 +26,10 @@ var Plugin = plugins.Plugin{
 
 type pluginState struct {
 	dnsServers []net.IP
-	log        logrus.FieldLogger
+	log        logger.FieldLogger
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, true)}
 	if len(args) < 1 {
 		return nil, errors.New("need at least one DNS server")
@@ -46,7 +45,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	return pState.Handler6, nil
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 	pState.log.Printf("loaded plugin for DHCPv4.")
 	if len(args) < 1 {

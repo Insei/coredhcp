@@ -2,95 +2,41 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// Package logger is package with helpers, interfaces and implementations for coredhcp logging
 package logger
 
-import (
-	"fmt"
-	"io/ioutil"
-	"sync"
+//Logger interface that describes logger functionality
+type Logger interface {
+	Debugf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Printf(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+	Warningf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Panicf(format string, args ...interface{})
 
-	log_prefixed "github.com/chappjc/logrus-prefix"
-	"github.com/rifflock/lfshook"
-	"github.com/sirupsen/logrus"
-)
-
-var (
-	globalLogger   *logrus.Logger
-	getLoggerMutex sync.Mutex
-)
-
-type pluginFormatter struct {
-	log_prefixed.TextFormatter
+	Debug(args ...interface{})
+	Info(args ...interface{})
+	Print(args ...interface{})
+	Warn(args ...interface{})
+	Warning(args ...interface{})
+	Error(args ...interface{})
+	Fatal(args ...interface{})
+	Panic(args ...interface{})
 }
 
-func (f *pluginFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	messagePrefix := ""
-	server, ok := entry.Data["server"]
-	if ok {
-		messagePrefix += fmt.Sprintf("%s: ", server)
-		delete(entry.Data, "server")
-	}
-	proto, ok := entry.Data["protocol"]
-	if ok {
-		messagePrefix += fmt.Sprintf("DHCP%s: ", proto)
-		delete(entry.Data, "protocol")
-	}
-	plugin, ok := entry.Data["plugin"]
-	if ok {
-		messagePrefix += fmt.Sprintf("plugin: %s: ", plugin)
-		delete(entry.Data, "plugin")
-	}
-	entry.Message = messagePrefix + entry.Message
-	format, _ := f.TextFormatter.Format(entry)
-	if plugin != nil {
-		entry.Data["plugin"] = plugin
-	}
-	if proto != nil {
-		entry.Data["protocol"] = proto
-	}
-	if server != nil {
-		entry.Data["server"] = server
-	}
-	return format, nil
+//FieldLogger logger interface that support filed logging
+type FieldLogger interface {
+	Logger
+	WithField(key string, value interface{}) FieldLogger
 }
 
-// GetLogger returns a configured logger instance
-func GetLogger(prefix string) *logrus.Entry {
-	if prefix == "" {
-		prefix = "<no prefix>"
-	}
-	if globalLogger == nil {
-		getLoggerMutex.Lock()
-		defer getLoggerMutex.Unlock()
-		logger := logrus.New()
-		logger.SetFormatter(&pluginFormatter{
-			TextFormatter: log_prefixed.TextFormatter{
-				FullTimestamp: true,
-			},
-		})
-		globalLogger = logger
-	}
-	return globalLogger.WithField("prefix", prefix)
-}
-
-// WithFile logs to the specified file in addition to the existing output.
-func WithFile(log *logrus.Entry, logfile string) {
-	log.Logger.AddHook(lfshook.NewHook(logfile, &logrus.TextFormatter{}))
-}
-
-// WithNoStdOutErr disables logging to stdout/stderr.
-func WithNoStdOutErr(log *logrus.Entry) {
-	log.Logger.SetOutput(ioutil.Discard)
-}
-
-// CreatePluginLogger returns a logger instance for the plugin
-func CreatePluginLogger(serverLogger logrus.FieldLogger, pluginName string, ipv6 bool) logrus.FieldLogger {
+// CreatePluginLogger returns a FieldLogger instance for the plugin
+func CreatePluginLogger(serverLogger FieldLogger, pluginName string, ipv6 bool) FieldLogger {
 	protocol := "v4"
 	if ipv6 {
 		protocol = "v6"
-	}
-	if serverLogger == nil {
-		return GetLogger("default").WithField("plugin", pluginName).WithField("protocol", protocol)
 	}
 	return serverLogger.WithField("plugin", pluginName).WithField("protocol", protocol)
 }

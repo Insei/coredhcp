@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func TestLoadDHCPv4Records(t *testing.T) {
 	t.Run("valid leases", func(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 	"github.com/insei/coredhcp/logger"
 )
 
-var log = logger.GetLogger("plugins/range")
+var log = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 // loadRecords loads the DHCPv6/v4 Records global map with records stored on
 // the specified file. The records have to be one per line, a mac address and an

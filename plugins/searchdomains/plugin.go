@@ -13,7 +13,6 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/rfc1035label"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "searchdomains"
@@ -41,7 +40,7 @@ var Plugin = plugins.Plugin{
 // this plugin once for the v4 and once for the v6 server.
 type pluginState struct {
 	searchList []string
-	log        logrus.FieldLogger
+	log        logger.FieldLogger
 }
 
 // copySlice creates a new copy of a string slice in memory.
@@ -53,7 +52,7 @@ func copySlice(original []string) []string {
 	return copied
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginState{
 		searchList: args,
 		log:        logger.CreatePluginLogger(serverLogger, pluginName, true),
@@ -62,7 +61,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	return pState.Handler6, nil
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{
 		searchList: args,
 		log:        logger.CreatePluginLogger(serverLogger, pluginName, true),

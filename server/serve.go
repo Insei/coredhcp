@@ -9,7 +9,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/sirupsen/logrus"
+	"github.com/insei/coredhcp/logger"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
 
@@ -24,14 +24,14 @@ type listener6 struct {
 	*ipv6.PacketConn
 	net.Interface
 	handlers []handler.Handler6
-	log      logrus.FieldLogger
+	log      logger.FieldLogger
 }
 
 type listener4 struct {
 	*ipv4.PacketConn
 	net.Interface
 	handlers []handler.Handler4
-	log      logrus.FieldLogger
+	log      logger.FieldLogger
 }
 
 type listener interface {
@@ -42,10 +42,10 @@ type listener interface {
 type Servers struct {
 	listeners []listener
 	errors    chan error
-	Log       logrus.FieldLogger
+	Log       logger.FieldLogger
 }
 
-func listen4(logger logrus.FieldLogger, a *net.UDPAddr) (*listener4, error) {
+func listen4(logger logger.FieldLogger, a *net.UDPAddr) (*listener4, error) {
 	var err error
 	l4 := listener4{log: logger}
 	udpConn, err := server4.NewIPv4UDPConn(a.Zone, a)
@@ -79,7 +79,7 @@ func listen4(logger logrus.FieldLogger, a *net.UDPAddr) (*listener4, error) {
 	return &l4, nil
 }
 
-func listen6(logger logrus.FieldLogger, a *net.UDPAddr) (*listener6, error) {
+func listen6(logger logger.FieldLogger, a *net.UDPAddr) (*listener6, error) {
 	l6 := listener6{log: logger}
 	udpconn, err := server6.NewIPv6UDPConn(a.Zone, a)
 	if err != nil {
@@ -113,7 +113,7 @@ func listen6(logger logrus.FieldLogger, a *net.UDPAddr) (*listener6, error) {
 
 // Start will start the server asynchronously. See `Wait` to wait until
 // the execution ends.
-func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
+func Start(logger logger.FieldLogger, config *config.Config) (*Servers, error) {
 	serverLogger := logger.WithField("prefix", config.Name)
 	handlers4, handlers6, err := plugins.LoadPlugins(serverLogger, config)
 	if err != nil {
@@ -126,7 +126,7 @@ func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
 
 	// listen
 	if config.Server6 != nil {
-		serverLogger.Println("Starting DHCPv6 server")
+		serverLogger.Print("Starting DHCPv6 server")
 		for _, addr := range config.Server6.Addresses {
 			var l6 *listener6
 			l6, err = listen6(serverLogger, &addr)
@@ -142,7 +142,7 @@ func Start(logger logrus.FieldLogger, config *config.Config) (*Servers, error) {
 	}
 
 	if config.Server4 != nil {
-		serverLogger.Println("Starting DHCPv4 server")
+		serverLogger.Print("Starting DHCPv4 server")
 		for _, addr := range config.Server4.Addresses {
 			var l4 *listener4
 			l4, err = listen4(serverLogger, &addr)

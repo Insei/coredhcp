@@ -19,7 +19,6 @@ import (
 	"github.com/insei/coredhcp/plugins/allocators"
 	"github.com/insei/coredhcp/plugins/allocators/bitmap"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "range"
@@ -45,7 +44,7 @@ type pluginState struct {
 	LeaseTime time.Duration
 	leasefile *os.File
 	allocator allocators.Allocator
-	log       logrus.FieldLogger
+	log       logger.FieldLogger
 }
 
 // Handler4 handles DHCPv4 packets for the range plugin
@@ -87,7 +86,7 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 	return resp, false
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	var err error
 	pState := pluginState{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 

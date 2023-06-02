@@ -13,7 +13,6 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "staticroute"
@@ -26,10 +25,10 @@ var Plugin = plugins.Plugin{
 
 type pluginState struct {
 	routes dhcpv4.Routes
-	log    logrus.FieldLogger
+	log    logger.FieldLogger
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{
 		routes: make(dhcpv4.Routes, 0),
 		log:    logger.CreatePluginLogger(serverLogger, pluginName, false),

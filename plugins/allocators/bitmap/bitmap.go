@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/insei/coredhcp/logger"
 	"github.com/willf/bitset"
 
 	"github.com/insei/coredhcp/plugins/allocators"
@@ -105,7 +105,7 @@ func (a *Allocator) Free(prefix net.IPNet) error {
 
 // NewBitmapAllocator creates a new allocator, allocating /`size` prefixes
 // carved out of the given `pool` prefix
-func NewBitmapAllocator(logger logrus.FieldLogger, pool net.IPNet, size int) (*Allocator, error) {
+func NewBitmapAllocator(logger logger.FieldLogger, pool net.IPNet, size int) (*Allocator, error) {
 	log := logger.WithField("plugin", "allocator: bitmap")
 	poolSize, _ := pool.Mask.Size()
 	allocOrder := size - poolSize
@@ -115,7 +115,7 @@ func NewBitmapAllocator(logger logrus.FieldLogger, pool net.IPNet, size int) (*A
 	} else if allocOrder >= strconv.IntSize {
 		return nil, fmt.Errorf("A pool with more than 2^%d items is not representable", size-poolSize)
 	} else if allocOrder >= 32 {
-		log.Warningln("Using a pool of more than 2^32 elements may result in large memory consumption")
+		log.Warning("Using a pool of more than 2^32 elements may result in large memory consumption")
 	}
 
 	if !(1<<uint(allocOrder) <= bitset.Cap()) {

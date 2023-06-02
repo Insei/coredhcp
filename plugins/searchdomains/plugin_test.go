@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func TestAddDomains6(t *testing.T) {
 	assert := assert.New(t)

@@ -13,7 +13,6 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "mtu"
@@ -29,7 +28,7 @@ type pluginState struct {
 	mtu int
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	if len(args) != 1 {
 		return nil, errors.New("need one mtu value")
 	}

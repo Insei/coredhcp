@@ -25,7 +25,6 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	dhcpIana "github.com/insomniacslk/dhcp/iana"
-	"github.com/sirupsen/logrus"
 	"github.com/willf/bitset"
 
 	"github.com/insei/coredhcp/handler"
@@ -45,7 +44,7 @@ var Plugin = plugins.Plugin{
 
 const leaseDuration = 3600 * time.Second
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	// - prefix: 2001:db8::/48 64
 	if len(args) < 2 {
 		return nil, errors.New("Need both a subnet and an allocation max size")
@@ -89,7 +88,7 @@ type pluginState struct {
 	// Since it's not valid utf-8 we can't use any other string function though
 	Records   map[string][]lease
 	allocator allocators.Allocator
-	log       logrus.FieldLogger
+	log       logger.FieldLogger
 }
 
 // samePrefix returns true if both prefixes are defined and equal

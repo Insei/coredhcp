@@ -38,7 +38,6 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "nbp"
@@ -52,12 +51,12 @@ var Plugin = plugins.Plugin{
 
 type pluginStateV6 struct {
 	opt59, opt60 dhcpv6.Option
-	log          logrus.FieldLogger
+	log          logger.FieldLogger
 }
 
 type pluginStateV4 struct {
 	opt66, opt67 *dhcpv4.Option
-	log          logrus.FieldLogger
+	log          logger.FieldLogger
 }
 
 func parseArgs(args ...string) (*url.URL, error) {
@@ -67,7 +66,7 @@ func parseArgs(args ...string) (*url.URL, error) {
 	return url.Parse(args[0])
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	u, err := parseArgs(args...)
 	if err != nil {
 		return nil, err
@@ -90,7 +89,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	return pState.Handler6, nil
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	u, err := parseArgs(args...)
 	if err != nil {
 		return nil, err

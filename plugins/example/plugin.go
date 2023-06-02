@@ -16,7 +16,6 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/sirupsen/logrus"
 )
 
 // Plugin wraps the information necessary to register a plugin.
@@ -70,7 +69,7 @@ var Plugin = plugins.Plugin{
 }
 
 type pluginState struct {
-	log logrus.FieldLogger
+	log logger.FieldLogger
 }
 
 // setup6 is the setup function to initialize the handler for DHCPv6
@@ -80,7 +79,7 @@ type pluginState struct {
 // `exampleHandler6` function. Such function will be called for every DHCPv6
 // packet that the server receives. Remember that a handler may not be called
 // for each packet, if the handler chain is interrupted before reaching it.
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginState{
 		log: logger.CreatePluginLogger(serverLogger, pluginName, true),
 	}
@@ -91,7 +90,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 
 // setup4 behaves like setupExample6, but for DHCPv4 packets. It
 // implements the `plugin.SetupFunc4` interface.
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{
 		log: logger.CreatePluginLogger(serverLogger, pluginName, false),
 	}
