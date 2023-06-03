@@ -9,7 +9,7 @@ import (
 
 	"github.com/insei/coredhcp/config"
 	"github.com/insei/coredhcp/handler"
-	"github.com/sirupsen/logrus"
+	"github.com/insei/coredhcp/logger"
 )
 
 // Plugin represents a plugin object.
@@ -25,13 +25,13 @@ type Plugin struct {
 var RegisteredPlugins = make(map[string]*Plugin)
 
 // SetupFunc6 defines a plugin setup function for DHCPv6
-type SetupFunc6 func(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error)
+type SetupFunc6 func(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error)
 
 // SetupFunc4 defines a plugin setup function for DHCPv6
-type SetupFunc4 func(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error)
+type SetupFunc4 func(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error)
 
 // RegisterPlugin registers a plugin.
-func RegisterPlugin(logger logrus.FieldLogger, plugin *Plugin) error {
+func RegisterPlugin(logger logger.FieldLogger, plugin *Plugin) error {
 	if plugin == nil {
 		return errors.New("cannot register nil plugin")
 	}
@@ -51,7 +51,7 @@ func RegisterPlugin(logger logrus.FieldLogger, plugin *Plugin) error {
 // plugin import time.
 // This function returns the list of loaded v6 plugins, the list of loaded v4
 // plugins, and an error if any.
-func LoadPlugins(serverLogger logrus.FieldLogger, conf *config.Config) ([]handler.Handler4, []handler.Handler6, error) {
+func LoadPlugins(serverLogger logger.FieldLogger, conf *config.Config) ([]handler.Handler4, []handler.Handler6, error) {
 	serverLogger.Print("Loading plugins...")
 	handlers4 := make([]handler.Handler4, 0)
 	handlers6 := make([]handler.Handler6, 0)

@@ -15,7 +15,6 @@ import (
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "sleep"
@@ -44,10 +43,10 @@ var Plugin = plugins.Plugin{
 
 type pluginState struct {
 	delay time.Duration
-	log   logrus.FieldLogger
+	log   logger.FieldLogger
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("want exactly one argument, got %d", len(args))
 	}
@@ -63,7 +62,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	return makeSleepHandler6(pState), nil
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("want exactly one argument, got %d", len(args))
 	}

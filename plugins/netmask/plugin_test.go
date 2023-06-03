@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func TestCheckValidNetmask(t *testing.T) {
 	assert.True(t, checkValidNetmask(net.IPv4Mask(255, 255, 255, 0)))

@@ -15,7 +15,6 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/iana"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "server_id"
@@ -30,12 +29,12 @@ var Plugin = plugins.Plugin{
 type pluginStateV6 struct {
 	// v6ServerID is the DUID of the v6 server
 	serverID *dhcpv6.Duid
-	log      logrus.FieldLogger
+	log      logger.FieldLogger
 }
 
 type pluginStateV4 struct {
 	serverID net.IP
-	log      logrus.FieldLogger
+	log      logger.FieldLogger
 }
 
 // Handler6 handles DHCPv6 packets for the server_id plugin.
@@ -101,7 +100,7 @@ func (p pluginStateV4) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool)
 	return resp, false
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginStateV4{log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 	pState.log.Printf("loading `server_id` plugin for DHCPv4 with args: %v", args)
 	if len(args) < 1 {
@@ -118,7 +117,7 @@ func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, 
 	return pState.Handler4, nil
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginStateV6{log: logger.CreatePluginLogger(serverLogger, pluginName, true)}
 	pState.log.Printf("loading `server_id` plugin for DHCPv6 with args: %v", args)
 	if len(args) < 2 {

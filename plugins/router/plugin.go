@@ -12,7 +12,6 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "router"
@@ -25,10 +24,10 @@ var Plugin = plugins.Plugin{
 
 type pluginState struct {
 	routers []net.IP
-	log     logrus.FieldLogger
+	log     logger.FieldLogger
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{routers: []net.IP{}, log: logger.CreatePluginLogger(serverLogger, pluginName, false)}
 	pState.log.Printf("Loaded plugin for DHCPv4.")
 	if len(args) < 1 {

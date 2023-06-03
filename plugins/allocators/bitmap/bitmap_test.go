@@ -14,7 +14,7 @@ import (
 	"github.com/willf/bitset"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func getAllocator(bits int) *Allocator {
 	_, prefix, err := net.ParseCIDR("2001:db8::/56")

@@ -2,6 +2,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+//go:build linux
 // +build linux
 
 package server
@@ -13,15 +14,15 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/insei/coredhcp/logger"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 //this function sends an unicast to the hardware address defined in resp.ClientHWAddr,
 //the layer3 destination address is still the broadcast address;
 //iface: the interface where the DHCP message should be sent;
 //resp: DHCPv4 struct, which should be sent;
-func sendEthernet(logger logrus.FieldLogger, iface net.Interface, resp *dhcpv4.DHCPv4) error {
+func sendEthernet(logger logger.FieldLogger, iface net.Interface, resp *dhcpv4.DHCPv4) error {
 
 	eth := layers.Ethernet{
 		EthernetType: layers.EthernetTypeIPv4,

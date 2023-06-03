@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/insei/coredhcp/logger"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
@@ -18,12 +18,12 @@ import (
 //Parser is a struct for parsing yml config to Config via Viper
 type Parser struct {
 	config *Config
-	logger logrus.FieldLogger
+	logger logger.FieldLogger
 	v      *viper.Viper
 }
 
 //NewParser creates Viper based parser for Config
-func NewParser(logger logrus.FieldLogger) *Parser {
+func NewParser(logger logger.FieldLogger) *Parser {
 	return &Parser{
 		config: New(),
 		logger: logger.WithField("prefix", "config-parser"),

@@ -13,7 +13,6 @@ import (
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/sirupsen/logrus"
 )
 
 const pluginName = "netmask"
@@ -28,7 +27,7 @@ type pluginState struct {
 	netmask net.IPMask
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	plog := logger.CreatePluginLogger(serverLogger, pluginName, false)
 	plog.Printf("loaded plugin for DHCPv4")
 	if len(args) != 1 {

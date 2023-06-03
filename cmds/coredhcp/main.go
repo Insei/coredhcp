@@ -8,14 +8,11 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/insei/coredhcp/config"
 	"github.com/insei/coredhcp/logger"
-	"github.com/insei/coredhcp/server"
-
 	"github.com/insei/coredhcp/plugins"
 	pl_dns "github.com/insei/coredhcp/plugins/dns"
 	pl_file "github.com/insei/coredhcp/plugins/file"
@@ -30,35 +27,18 @@ import (
 	pl_serverid "github.com/insei/coredhcp/plugins/serverid"
 	pl_sleep "github.com/insei/coredhcp/plugins/sleep"
 	pl_staticroute "github.com/insei/coredhcp/plugins/staticroute"
+	"github.com/insei/coredhcp/server"
 
-	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
 
 var (
 	flagLogFile     = flag.StringP("logfile", "l", "", "Name of the log file to append to. Default: stdout/stderr only")
 	flagLogNoStdout = flag.BoolP("nostdout", "N", false, "Disable logging to stdout/stderr")
-	flagLogLevel    = flag.StringP("loglevel", "L", "info", fmt.Sprintf("Log level. One of %v", getLogLevels()))
+	flagLogLevel    = flag.StringP("loglevel", "L", "info", fmt.Sprintf("Log level. One of %v", logger.GetLogLevelsStrings()))
 	flagConfig      = flag.StringP("conf", "c", "default-server.config.yml", "Use this configuration file instead of the default location")
 	flagPlugins     = flag.BoolP("plugins", "P", false, "list plugins")
 )
-
-var logLevels = map[string]func(*logrus.Logger){
-	"none":    func(l *logrus.Logger) { l.SetOutput(ioutil.Discard) },
-	"debug":   func(l *logrus.Logger) { l.SetLevel(logrus.DebugLevel) },
-	"info":    func(l *logrus.Logger) { l.SetLevel(logrus.InfoLevel) },
-	"warning": func(l *logrus.Logger) { l.SetLevel(logrus.WarnLevel) },
-	"error":   func(l *logrus.Logger) { l.SetLevel(logrus.ErrorLevel) },
-	"fatal":   func(l *logrus.Logger) { l.SetLevel(logrus.FatalLevel) },
-}
-
-func getLogLevels() []string {
-	var levels []string
-	for k := range logLevels {
-		levels = append(levels, k)
-	}
-	return levels
-}
 
 var desiredPlugins = []*plugins.Plugin{
 	&pl_dns.Plugin,
@@ -86,39 +66,37 @@ func main() {
 		os.Exit(0)
 	}
 
-	log := logger.GetLogger("main")
-	fn, ok := logLevels[*flagLogLevel]
-	if !ok {
-		log.Fatalf("Invalid log level '%s'. Valid log levels are %v", *flagLogLevel, getLogLevels())
+	logBuilder := logger.NewDefaultLogrusBuilder()
+	logLevel, err := logger.LogLevelFromString(*flagLogLevel)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	fn(log.Logger)
-	log.Infof("Setting log level to '%s'", *flagLogLevel)
+	logBuilder.LogLevel(logLevel)
 	if *flagLogFile != "" {
-		log.Infof("Logging to file %s", *flagLogFile)
-		logger.WithFile(log, *flagLogFile)
+		logBuilder.WithFile(*flagLogFile)
 	}
 	if *flagLogNoStdout {
-		log.Infof("Disabling logging to stdout/stderr")
-		logger.WithNoStdOutErr(log)
+		logBuilder.WithNoStd()
 	}
+	log := logBuilder.Build()
 
 	// register plugins
 	for _, plugin := range desiredPlugins {
-		if err := plugins.RegisterPlugin(log, plugin); err != nil {
+		if err := plugins.RegisterPlugin(log.WithField("prefix", "main"), plugin); err != nil {
 			log.Fatalf("Failed to register plugin '%s': %v", plugin.Name, err)
 		}
 	}
 
 	// parse config
 	parser := config.NewParser(log)
-	config, err := parser.Parse(*flagConfig)
+	conf, err := parser.Parse(*flagConfig)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
-	serverLogger := logger.GetLogger(config.Name)
 
 	// start server
-	srv, err := server.Start(serverLogger, config)
+	srv, err := server.Start(log.WithField("prefix", conf.Name), conf)
 	if err != nil {
 		log.Fatal(err)
 	}

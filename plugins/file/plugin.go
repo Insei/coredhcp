@@ -37,13 +37,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/insei/coredhcp/handler"
 	"github.com/insei/coredhcp/logger"
 	"github.com/insei/coredhcp/plugins"
-	"github.com/fsnotify/fsnotify"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -62,7 +61,7 @@ type pluginState struct {
 	recLock sync.RWMutex
 	// staticRecords holds a MAC -> IP address mapping
 	staticRecords map[string]net.IP
-	log           logrus.FieldLogger
+	log           logger.FieldLogger
 }
 
 // LoadDHCPv4Records loads the DHCPv4Records global map with records stored on
@@ -192,7 +191,7 @@ func (p *pluginState) Handler4(req, resp *dhcpv4.DHCPv4) (*dhcpv4.DHCPv4, bool) 
 	return resp, true
 }
 
-func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, error) {
+func setup6(serverLogger logger.FieldLogger, args ...string) (handler.Handler6, error) {
 	pState := &pluginState{
 		recLock:       sync.RWMutex{},
 		staticRecords: map[string]net.IP{},
@@ -202,7 +201,7 @@ func setup6(serverLogger logrus.FieldLogger, args ...string) (handler.Handler6, 
 	return h6, err
 }
 
-func setup4(serverLogger logrus.FieldLogger, args ...string) (handler.Handler4, error) {
+func setup4(serverLogger logger.FieldLogger, args ...string) (handler.Handler4, error) {
 	pState := &pluginState{
 		recLock:       sync.RWMutex{},
 		staticRecords: map[string]net.IP{},

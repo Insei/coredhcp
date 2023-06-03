@@ -13,7 +13,7 @@ import (
 	dhcpIana "github.com/insomniacslk/dhcp/iana"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func TestRoundTrip(t *testing.T) {
 	reqIAID := [4]uint8{0x12, 0x34, 0x56, 0x78}

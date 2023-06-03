@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testsLogger = logger.GetLogger("tests")
+var testsLogger = logger.NewDefaultLogrusBuilder().Build().WithField("prefix", "tests")
 
 func makeLLDUID(mac string) (*dhcpv6.Duid, error) {
 	hwaddr, err := net.ParseMAC(mac)
